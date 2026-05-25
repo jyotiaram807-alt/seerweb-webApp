@@ -24,6 +24,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import MainLayout from "@/components/MainLayoutProps";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -373,13 +374,9 @@ const ManageProducts = () => {
 
   // ── JSX ─────────────────────────────────────────────────────────────────────
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
-      <div className="w-64 fixed top-0 left-0 h-full z-10"><Sidebar /></div>
-
-      <div className="flex-1 ml-64 flex flex-col">
-        <Navbar />
-        <div className="flex-1 overflow-y-auto pt-16">
-          <div className="container mx-auto px-4 py-6">
+    <MainLayout>
+        <div className="px-4">
+          <div className="container mx-auto px-2">
 
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6">
@@ -734,9 +731,8 @@ const ManageProducts = () => {
             </Dialog>
 
           </div>
-        </div>
-      </div>
-    </div>
+          </div>
+</MainLayout>
   );
 };
 

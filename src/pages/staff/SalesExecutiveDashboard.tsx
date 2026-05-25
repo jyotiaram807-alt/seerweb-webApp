@@ -27,6 +27,7 @@ import Sidebar from "@/components/Sidebar";
 import OmsCart from "@/components/OmsCart";
 import { Retailer } from "@/types";
 import { useBusinessSchema } from "@/hooks/useBusinessSchema";
+import MainLayout from "@/components/MainLayoutProps";
 
 const SalesExecutiveDashboard = () => {
   const { user, isAuthenticated } = useAuth();
@@ -215,14 +216,9 @@ const SalesExecutiveDashboard = () => {
 
   // ── JSX ────────────────────────────────────────────────────────────────────
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
-      <div className="w-64 fixed top-0 left-0 h-full z-10"><Sidebar /></div>
-
-      <div className="flex-1 ml-64 flex flex-col">
-        <Navbar />
-
-        <div className="flex-1 overflow-y-auto pt-16">
-          <div className="container mx-auto px-4 py-6">
+    <MainLayout>
+      <div className="px-4">
+          <div className="container mx-auto px-2">
 
             <div className="mb-6">
               <h1 className="text-2xl font-bold text-gray-900">Create Order</h1>
@@ -582,8 +578,7 @@ const SalesExecutiveDashboard = () => {
 
           </div>
         </div>
-      </div>
-    </div>
+    </MainLayout>
   );
 };
 

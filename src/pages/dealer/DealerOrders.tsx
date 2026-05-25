@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import Navbar from "@/components/Navbar";
+import MainLayout from "@/components/MainLayoutProps";
 import SearchBar from "@/components/SearchBar";
 import OrdersList from "@/components/OrdersList";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { apiUrl } from "@/url";
-import Sidebar from "@/components/Sidebar";
 import {
   Card,
   CardContent,
@@ -203,15 +202,9 @@ const DealerOrders = () => {
   ];
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <div className="w-64 fixed top-0 left-0 h-full z-10">
-        <Sidebar />
-      </div>
-
-      <div className="flex-1 ml-64 flex flex-col">
-        <Navbar />
-        <div className="flex-1 overflow-y-auto pt-16">
-          <div className="container mx-auto px-4 py-6">
+    <MainLayout>
+        <div className="px-4">
+          <div className="container mx-auto px-2">
             <div className="mb-6">
               <h1 className="text-2xl font-bold text-gray-900">Order Management</h1>
               <p className="text-gray-600 mt-1">Manage and track all orders</p>
@@ -320,9 +313,8 @@ const DealerOrders = () => {
               </CardContent>
             </Card>
           </div>
-        </div>
-      </div>
-    </div>
+          </div>
+</MainLayout>
   );
 };
 

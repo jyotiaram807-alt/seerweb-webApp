@@ -34,6 +34,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
+import MainLayout from "@/components/MainLayoutProps";
 
 interface StaffFormData {
   username: string;
@@ -308,14 +309,9 @@ const DealerStaff = () => {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
-      <div className="w-64 fixed top-0 left-0 h-full z-10">
-        <Sidebar />
-      </div>
-      <div className="flex-1 ml-64 flex flex-col">
-        <Navbar />
-        <div className="flex-1 overflow-y-auto pt-16">
-          <div className="container mx-auto px-4 py-6">
+    <MainLayout>
+        <div className="px-4">
+          <div className="container mx-auto px-2">
 
             {/* Header */}
             <div className="flex justify-between items-center mb-6">
@@ -707,9 +703,8 @@ const DealerStaff = () => {
             </Dialog>
 
           </div>
-        </div>
-      </div>
-    </div>
+          </div>
+    </MainLayout>
   );
 };
 

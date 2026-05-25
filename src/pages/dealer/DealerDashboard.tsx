@@ -1,10 +1,9 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import Navbar from "@/components/Navbar";
+import MainLayout from "@/components/MainLayoutProps";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { apiUrl } from "@/url";
-import Sidebar from "@/components/Sidebar";
 import {
   Card,
   CardContent,
@@ -220,15 +219,9 @@ const DealerDashboard = () => {
   });
 
   return (
-    <div className="flex h-screen overflow-hidden ">
-      <div className="w-64 fixed top-0 left-0 h-full z-10">
-        <Sidebar />
-      </div>
-
-      <div className="flex-1 ml-64 flex flex-col">
-        <Navbar />
-        <div className="flex-1 overflow-y-auto pt-16">
-          <div className="container mx-auto px-4 py-6">
+    <MainLayout>
+      <div className="px-4">
+          <div className="container mx-auto px-2">
 
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
@@ -502,9 +495,8 @@ const DealerDashboard = () => {
             </div>
 
           </div>
-        </div>
       </div>
-    </div>
+    </MainLayout>
   );
 };
 

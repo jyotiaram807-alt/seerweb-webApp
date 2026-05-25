@@ -3,8 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { apiUrl } from "@/url";
 import { toast } from "sonner";
-import Navbar from "@/components/Navbar";
-import Sidebar from "@/components/Sidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +16,7 @@ import {
   KeyRound, Eye, EyeOff, LogOut, Calendar,
   BadgeCheck, Hash, Store, Settings2, ChevronRight,
 } from "lucide-react";
+import MainLayout from "./MainLayoutProps";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -157,27 +156,18 @@ const Profile = () => {
       </div>
     </div>
   );
-
+ 
   // ── JSX ───────────────────────────────────────────────────────────────────
   return (
-    <div className="flex h-screen overflow-hidden ">
-      <div className="w-64 fixed top-0 left-0 h-full z-10">
-        <Sidebar />
-      </div>
-
-      <div className="flex-1 ml-64 flex flex-col">
-        <Navbar />
-
-        <div className="flex-1 overflow-y-auto pt-16">
-          <div className="container mx-auto px-6 py-6 max-w-3xl">
+    <MainLayout>
+      <div className="px-4">
+          <div className="container mx-auto px-2">
 
             {/* ── Page Header ── */}
-            <div className="mb-6">
               <h1 className="text-2xl font-bold text-gray-900">My Profile</h1>
               <p className="text-sm text-gray-500 mt-0.5">
                 View your account details and manage your password
               </p>
-            </div>
 
             {/* ── Profile Hero Card ── */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-5">
@@ -341,8 +331,6 @@ const Profile = () => {
             </button>
 
           </div>
-        </div>
-      </div>
 
       {/* ── Change Password Dialog ── */}
       <Dialog open={pwDialogOpen} onOpenChange={(o) => {
@@ -514,7 +502,8 @@ const Profile = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+  </MainLayout>
   );
 };
 

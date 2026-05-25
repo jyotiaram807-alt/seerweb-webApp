@@ -27,6 +27,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import MainLayout from "@/components/MainLayoutProps";
 
 const Orders = () => {
   const { user, isAuthenticated } = useAuth();
@@ -263,16 +264,9 @@ const Orders = () => {
   ];
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
-      <div className="w-64 fixed top-0 left-0 h-full z-10">
-        <Sidebar />
-      </div>
-
-      <div className="flex-1 ml-64 flex flex-col">
-        <Navbar />
-
-        <div className="flex-1 overflow-y-auto pt-16">
-          <div className="container mx-auto px-4 py-6">
+    <MainLayout>
+      <div className="px-4">
+          <div className="container mx-auto px-2">
 
             <div className="mb-6">
               <h1 className="text-2xl font-bold text-gray-900">Sales Report & Orders</h1>
@@ -603,9 +597,8 @@ const Orders = () => {
             </Dialog>
 
           </div>
-        </div>
       </div>
-    </div>
+    </MainLayout>
   );
 };
 

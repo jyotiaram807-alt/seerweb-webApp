@@ -17,6 +17,7 @@ import Sidebar from "@/components/Sidebar";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/utils";
 import { apiUrl } from "@/url";
+import MainLayout from "@/components/MainLayoutProps";
 
 interface Dealer {
   id: number;
@@ -283,17 +284,8 @@ const ManageDealers = () => {
   ];
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      {/* Sidebar */}
-      <div className="w-64 fixed top-0 left-0 h-full z-10">
-        <Sidebar />
-      </div>
-
-      {/* Main */}
-      <div className="flex-1 ml-64 flex flex-col">
-        <Navbar />
-
-        <div className="flex-1 overflow-y-auto pt-16">
+    <MainLayout>
+      <div className="px-8 py-6">
           <div className="container mx-auto px-6 py-6">
 
             {/* Page Header */}
@@ -600,8 +592,7 @@ const ManageDealers = () => {
 
           </div>
         </div>
-      </div>
-    </div>
+    </MainLayout>
   );
 };
 

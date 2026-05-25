@@ -2,25 +2,15 @@ import { User, Mail, Building } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/context/AuthContext";
-import Navbar from "@/components/Navbar";
-import Sidebar from "@/components/Sidebar";
+
+import MainLayout from "@/components/MainLayoutProps";
 
 const RetailerProfile = () => {
   const { user } = useAuth();
 
   return (
-    <div className="flex h-screen bg-background overflow-hidden">
-      {/* Sidebar */}
-      <div className="w-64 fixed inset-y-0 left-0">
-        <Sidebar />
-      </div>
-
-      {/* Main Area */}
-      <div className="flex-1 ml-64 flex flex-col">
-        <Navbar />
-
-        {/* Page Content */}
-        <div className="flex-1 overflow-y-auto px-6 py-8">
+    <MainLayout>
+      <div className="px-4">
           {/* Page Header */}
           <div className="mb-6">
             <h1 className="text-3xl font-bold text-foreground">Profile</h1>
@@ -103,9 +93,8 @@ const RetailerProfile = () => {
               </div>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
+          </div>
+  </MainLayout>
   );
 };
 

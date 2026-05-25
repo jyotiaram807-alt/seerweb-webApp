@@ -16,6 +16,7 @@ import {
   Plus, Trash2, Pencil, X, GripVertical, Type, List,
   Hash, ArrowLeft, Settings2, ToggleLeft,
 } from "lucide-react";
+import MainLayout from "@/components/MainLayoutProps";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -211,14 +212,9 @@ const ManageCustomFields = () => {
 
   // ── JSX ─────────────────────────────────────────────────────────────────────
   return (
-    <div className="flex h-screen overflow-hidden">
-      <div className="w-64 fixed top-0 left-0 h-full z-10"><Sidebar /></div>
-
-      <div className="flex-1 ml-64 flex flex-col">
-        <Navbar />
-
-        <div className="flex-1 overflow-y-auto pt-16">
-          <div className="container mx-auto px-6 py-6 max-w-4xl">
+    <MainLayout>
+      <div className="px-4">
+          <div className="container mx-auto px-2 max-w-4xl">
 
             {/* ── Header ── */}
             <div className="flex items-center gap-4 mb-6">
@@ -347,8 +343,6 @@ const ManageCustomFields = () => {
               </div>
             )}
           </div>
-        </div>
-      </div>
 
       {/* ── Create / Edit Dialog ── */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -531,7 +525,8 @@ const ManageCustomFields = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+</MainLayout>
   );
 };
 

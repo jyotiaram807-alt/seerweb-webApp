@@ -3,8 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { apiUrl } from "@/url";
 import { toast } from "sonner";
-import Navbar from "@/components/Navbar";
-import Sidebar from "@/components/Sidebar";
+import MainLayout from "@/components/MainLayoutProps";
 import { DynamicSelect } from "@/components/DynamicSelect";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -400,336 +399,331 @@ const AddProduct = () => {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="flex h-screen overflow-hidden">
-      <div className="w-64 fixed top-0 left-0 h-full z-10"><Sidebar /></div>
+    <MainLayout>
+      <div className="px-4">
+        <div className="container mx-auto px-2">
 
-      <div className="flex-1 ml-64 flex flex-col">
-        <Navbar />
-        <div className="flex-1 overflow-y-auto pt-16">
-          <div className="container mx-auto px-6 py-6 max-w-5xl">
+          {/* Header */}
+          <div className="flex items-center gap-4 mb-6">
+            <button
+              onClick={() => navigate(-1)}
+              className="h-9 w-9 rounded-lg border border-gray-200 bg-white flex items-center justify-center hover:bg-gray-50 shadow-sm"
+            >
+              <ArrowLeft size={16} className="text-gray-600" />
+            </button>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">
+                {isEditing ? "Edit Product" : "Add New Product"}
+              </h1>
+              <p className="text-sm text-gray-500 mt-0.5">
+                {isEditing
+                  ? `Editing: ${editProduct?.name}`
+                  : "One product entry — all sizes stored as variants"}
+              </p>
+            </div>
+          </div>
 
-            {/* Header */}
-            <div className="flex items-center gap-4 mb-6">
-              <button
-                onClick={() => navigate(-1)}
-                className="h-9 w-9 rounded-lg border border-gray-200 bg-white flex items-center justify-center hover:bg-gray-50 shadow-sm"
-              >
-                <ArrowLeft size={16} className="text-gray-600" />
-              </button>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">
-                  {isEditing ? "Edit Product" : "Add New Product"}
-                </h1>
-                <p className="text-sm text-gray-500 mt-0.5">
-                  {isEditing
-                    ? `Editing: ${editProduct?.name}`
-                    : "One product entry — all sizes stored as variants"}
-                </p>
+          <form onSubmit={handleSubmit} className="space-y-6">
+
+            {/* Product Info */}
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+              <h2 className="text-sm font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                <Package size={15} className="text-blue-600" /> Product Info
+              </h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+                {/* Product Name */}
+                <div className="md:col-span-2 space-y-1.5">
+                  <Label className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                    <Tag size={13} className="text-gray-400" />
+                    Product Name <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    value={name}
+                    onChange={(e) => setName(capitalizeWords(e.target.value))}
+                    placeholder="e.g. Night Suit"
+                    required
+                  />
+                </div>
+
+                {/* Dynamic Fields */}
+                {allFields.map((field) => {
+                  const val = attrValues[field.field_key] ?? "";
+                  const opts =
+                    liveOptions[field.id] ??
+                    (field.field_options ? JSON.parse(field.field_options) : []);
+
+                  return (
+                    <div key={field.field_key} className="space-y-1.5">
+                      <Label className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                        <Layers size={13} className="text-gray-400" />
+                        {field.field_label}
+                        {!!field.is_required && <span className="text-red-500">*</span>}
+                      </Label>
+
+                      {field.field_type === "select" ? (
+                        <DynamicSelect
+                          schemaId={field.id}
+                          fieldKey={field.field_key}
+                          fieldLabel={field.field_label}
+                          options={opts}
+                          value={val}
+                          required={!!field.is_required}
+                          onSelect={(v) => setAttr(field.field_key, v)}
+                          onOptionsUpdate={(newOpts) =>
+                            setLiveOptions((p) => ({ ...p, [field.id]: newOpts }))
+                          }
+                        />
+                      ) : (
+                        <Input
+                          type={field.field_type === "number" ? "number" : "text"}
+                          value={val}
+                          onChange={(e) =>
+                            setAttr(
+                              field.field_key,
+                              field.field_type === "number"
+                                ? e.target.value
+                                : capitalizeWords(e.target.value)
+                            )
+                          }
+                          required={!!field.is_required}
+                          placeholder={`Enter ${field.field_label.toLowerCase()}`}
+                          min={field.field_type === "number" ? "0" : undefined}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+
+                {/* Variants (only when no size) */}
+                {!hasSize &&
+                  variants.map((v, i) => (
+                    <div key={v.id || i} className="grid grid-cols-1 md:grid-cols-3 gap-4 md:col-span-2">
+
+                      {/* Quantity */}
+                      <div className="space-y-1.5">
+                        <Label className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                          <Layers size={13} className="text-gray-400" /> Quantity <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          value={v.qty}
+                          onChange={(e) => setVariantField(v.id, "qty", e.target.value)}
+                          placeholder="0"
+                          className={`h-8 text-sm ${
+                            !v.qty || Number(v.qty) <= 0 ? "border-red-200" : ""
+                          }`}
+                        />
+                      </div>
+
+                      {/* Rate */}
+                      <div className="space-y-1.5">
+                        <Label className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                          <Layers size={13} className="text-gray-400" /> RATE <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          value={v.rate}
+                          onChange={(e) => setVariantField(v.id, "rate", e.target.value)}
+                          placeholder="0"
+                          className="h-8 text-sm"
+                        />
+                      </div>
+
+                      {/* MRP */}
+                      <div className="space-y-1.5">
+                        <Label className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                          <Layers size={13} className="text-gray-400" /> MRP <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          value={v.mrp}
+                          onChange={(e) => setVariantField(v.id, "mrp", e.target.value)}
+                          placeholder="0"
+                          className={`h-8 text-sm ${
+                            mrpRequired && !v.mrp ? "border-red-300" : ""
+                          }`}
+                        />
+                      </div>
+
+                    </div>
+                  ))}{/* Color */}
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                    <Layers size={13} className="text-gray-400" /> Color / Style
+                  </Label>
+                  <Input
+                    value={color}
+                    onChange={(e) => setColor(capitalizeWords(e.target.value))}
+                    placeholder="e.g. Navy, Red, Multicolor"
+                  />
+                </div>
+
+                {/* Description */}
+                <div className="md:col-span-2 space-y-1.5">
+                  <Label className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                    <AlignLeft size={13} className="text-gray-400" /> Description
+                  </Label>
+                  <Input
+                    value={description}
+                    onChange={(e) => setDescription(capitalizeWords(e.target.value))}
+                    placeholder="Additional product details…"
+                  />
+                </div>
+
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-
-              {/* Product Info */}
+            {/* Size selector */}
+            {sizeOptions.length > 0 && (
               <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-                <h2 className="text-sm font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                  <Package size={15} className="text-blue-600" /> Product Info
+                <h2 className="text-sm font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                  <Tag size={15} className="text-blue-600" /> Select Sizes
                 </h2>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-
-                  {/* Product Name */}
-                  <div className="md:col-span-2 space-y-1.5">
-                    <Label className="text-sm font-medium text-gray-700 flex items-center gap-1">
-                      <Tag size={13} className="text-gray-400" />
-                      Product Name <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      value={name}
-                      onChange={(e) => setName(capitalizeWords(e.target.value))}
-                      placeholder="e.g. Night Suit"
-                      required
-                    />
-                  </div>
-
-                  {/* Dynamic Fields */}
-                  {allFields.map((field) => {
-                    const val = attrValues[field.field_key] ?? "";
-                    const opts =
-                      liveOptions[field.id] ??
-                      (field.field_options ? JSON.parse(field.field_options) : []);
-
-                    return (
-                      <div key={field.field_key} className="space-y-1.5">
-                        <Label className="text-sm font-medium text-gray-700 flex items-center gap-1">
-                          <Layers size={13} className="text-gray-400" />
-                          {field.field_label}
-                          {!!field.is_required && <span className="text-red-500">*</span>}
-                        </Label>
-
-                        {field.field_type === "select" ? (
-                          <DynamicSelect
-                            schemaId={field.id}
-                            fieldKey={field.field_key}
-                            fieldLabel={field.field_label}
-                            options={opts}
-                            value={val}
-                            required={!!field.is_required}
-                            onSelect={(v) => setAttr(field.field_key, v)}
-                            onOptionsUpdate={(newOpts) =>
-                              setLiveOptions((p) => ({ ...p, [field.id]: newOpts }))
-                            }
-                          />
-                        ) : (
-                          <Input
-                            type={field.field_type === "number" ? "number" : "text"}
-                            value={val}
-                            onChange={(e) =>
-                              setAttr(
-                                field.field_key,
-                                field.field_type === "number"
-                                  ? e.target.value
-                                  : capitalizeWords(e.target.value)
-                              )
-                            }
-                            required={!!field.is_required}
-                            placeholder={`Enter ${field.field_label.toLowerCase()}`}
-                            min={field.field_type === "number" ? "0" : undefined}
-                          />
-                        )}
-                      </div>
-                    );
-                  })}
-
-                  {/* Variants (only when no size) */}
-                  {!hasSize &&
-                    variants.map((v, i) => (
-                      <div key={v.id || i} className="grid grid-cols-1 md:grid-cols-3 gap-4 md:col-span-2">
-
-                        {/* Quantity */}
-                        <div className="space-y-1.5">
-                          <Label className="text-sm font-medium text-gray-700 flex items-center gap-1">
-                            <Layers size={13} className="text-gray-400" /> Quantity <span className="text-red-500">*</span>
-                          </Label>
-                          <Input
-                            type="number"
-                            min="0"
-                            value={v.qty}
-                            onChange={(e) => setVariantField(v.id, "qty", e.target.value)}
-                            placeholder="0"
-                            className={`h-8 text-sm ${
-                              !v.qty || Number(v.qty) <= 0 ? "border-red-200" : ""
-                            }`}
-                          />
-                        </div>
-
-                        {/* Rate */}
-                        <div className="space-y-1.5">
-                          <Label className="text-sm font-medium text-gray-700 flex items-center gap-1">
-                            <Layers size={13} className="text-gray-400" /> RATE <span className="text-red-500">*</span>
-                          </Label>
-                          <Input
-                            type="number"
-                            min="0"
-                            value={v.rate}
-                            onChange={(e) => setVariantField(v.id, "rate", e.target.value)}
-                            placeholder="0"
-                            className="h-8 text-sm"
-                          />
-                        </div>
-
-                        {/* MRP */}
-                        <div className="space-y-1.5">
-                          <Label className="text-sm font-medium text-gray-700 flex items-center gap-1">
-                            <Layers size={13} className="text-gray-400" /> MRP <span className="text-red-500">*</span>
-                          </Label>
-                          <Input
-                            type="number"
-                            min="0"
-                            value={v.mrp}
-                            onChange={(e) => setVariantField(v.id, "mrp", e.target.value)}
-                            placeholder="0"
-                            className={`h-8 text-sm ${
-                              mrpRequired && !v.mrp ? "border-red-300" : ""
-                            }`}
-                          />
-                        </div>
-
-                      </div>
-                    ))}{/* Color */}
-                  <div className="space-y-1.5">
-                    <Label className="text-sm font-medium text-gray-700 flex items-center gap-1">
-                      <Layers size={13} className="text-gray-400" /> Color / Style
-                    </Label>
-                    <Input
-                      value={color}
-                      onChange={(e) => setColor(capitalizeWords(e.target.value))}
-                      placeholder="e.g. Navy, Red, Multicolor"
-                    />
-                  </div>
-
-                  {/* Description */}
-                  <div className="md:col-span-2 space-y-1.5">
-                    <Label className="text-sm font-medium text-gray-700 flex items-center gap-1">
-                      <AlignLeft size={13} className="text-gray-400" /> Description
-                    </Label>
-                    <Input
-                      value={description}
-                      onChange={(e) => setDescription(capitalizeWords(e.target.value))}
-                      placeholder="Additional product details…"
-                    />
-                  </div>
-
-                </div>
-              </div>
-
-              {/* Size selector */}
-              {sizeOptions.length > 0 && (
-                <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-                  <h2 className="text-sm font-semibold text-gray-800 mb-1 flex items-center gap-2">
-                    <Tag size={15} className="text-blue-600" /> Select Sizes
-                  </h2>
-                  <p className="text-xs text-gray-400 mb-4">
-                    {isEditing ? "Add or remove sizes for this product" : "Selecting sizes auto-generates variant rows below"}
-                  </p>
-                  <MultiSizeSelect options={sizeOptions} selected={selectedSizes} onChange={setSelectedSizes} />
-                  {selectedSizes.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mt-3">
-                      {selectedSizes.map((s) => (
-                        <Badge key={s} className="bg-blue-100 text-blue-700 border-blue-200 gap-1">
-                          {s}
-                          <X size={10} className="cursor-pointer" onClick={() => setSelectedSizes((p) => p.filter((x) => x !== s))} />
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Variant rows */}
-              {hasSize && 
-                <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h2 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
-                        <BarChart2 size={15} className="text-blue-600" /> Product Variants
-                      </h2>
-                      <p className="text-xs text-gray-400 mt-0.5">
-                        {variants.length} variant{variants.length !== 1 ? "s" : ""} — all stored in one product entry
-                      </p>
-                    </div>
-                    <Button
-                      type="button" size="sm" variant="outline"
-                      onClick={() => setVariants((p) => [...p, newVariant()])}
-                      className="gap-1.5 text-blue-600 border-blue-200 hover:bg-blue-50"
-                    >
-                      <Plus size={13} /> Add Row
-                    </Button>
-                  </div>
-
-                  <div className={`grid gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 px-1 ${hasSize ? "grid-cols-[1fr_80px_100px_100px_100px_44px]" : "grid-cols-[80px_100px_100px_100px_44px]"}`}>
-                    {hasSize && <span>Size</span>}
-                    <span>Qty <span className="text-red-500">*</span></span>
-                    <span>Rate (₹)</span>
-                    <span>MRP (₹){mrpRequired && <span className="text-red-500"> *</span>}</span>
-                    <span>Rack</span>
-                    <span />
-                  </div>
-
-                  <div className="space-y-2">
-                    {variants.map((v, i) => (
-                      <div
-                        key={v.id}
-                        className={`grid gap-2 items-center rounded-lg px-3 py-2 border ${hasSize ? "grid-cols-[1fr_80px_100px_100px_100px_44px]" : "grid-cols-[80px_100px_100px_100px_44px]"} ${isEditing && i === 0 ? "bg-blue-50 border-blue-200" : "bg-gray-50 border-gray-100"}`}
-                      >
-                        {hasSize && (
-                          <select
-                            value={v.size}
-                            onChange={(e) => setVariantField(v.id, "size", e.target.value)}
-                            className="w-full rounded-md border border-gray-200 bg-white px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          >
-                            <option value="">—</option>
-                            {sizeOptions.map((o) => <option key={o} value={o}>{o}</option>)}
-                          </select>
-                        )}
-                        <Input type="number" min="0" value={v.qty} onChange={(e) => setVariantField(v.id, "qty", e.target.value)} placeholder="0" className={`h-8 text-sm ${!v.qty.trim() || Number(v.qty) <= 0 ? "border-red-200" : ""}`} />
-                        <Input type="number" min="0" value={v.rate} onChange={(e) => setVariantField(v.id, "rate", e.target.value)} placeholder="0" className="h-8 text-sm" />
-                        <Input type="number" min="0" value={v.mrp} onChange={(e) => setVariantField(v.id, "mrp", e.target.value)} placeholder="0" className={`h-8 text-sm ${mrpRequired && !v.mrp.trim() ? "border-red-300" : ""}`} />
-                        <Input value={v.rack} onChange={(e) => setVariantField(v.id, "rack", e.target.value)} placeholder="A1" className="h-8 text-sm" />
-                        <button
-                          type="button"
-                          onClick={() => setVariants((p) => { const u = p.filter((x) => x.id !== v.id); return u.length ? u : [newVariant()]; })}
-                          disabled={variants.length === 1}
-                          className="h-8 w-8 flex items-center justify-center rounded-lg text-red-400 hover:bg-red-50 disabled:opacity-20 transition-colors"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
+                <p className="text-xs text-gray-400 mb-4">
+                  {isEditing ? "Add or remove sizes for this product" : "Selecting sizes auto-generates variant rows below"}
+                </p>
+                <MultiSizeSelect options={sizeOptions} selected={selectedSizes} onChange={setSelectedSizes} />
+                {selectedSizes.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-3">
+                    {selectedSizes.map((s) => (
+                      <Badge key={s} className="bg-blue-100 text-blue-700 border-blue-200 gap-1">
+                        {s}
+                        <X size={10} className="cursor-pointer" onClick={() => setSelectedSizes((p) => p.filter((x) => x !== s))} />
+                      </Badge>
                     ))}
                   </div>
-                </div>
-              }
+                )}
+              </div>
+            )}
 
-              {/* Product Image */}
+            {/* Variant rows */}
+            {hasSize && 
               <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-                <h2 className="text-sm font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                  <ImagePlus size={15} className="text-blue-600" /> Product Image
-                </h2>
-                <div
-                  className="border-2 border-dashed border-gray-200 rounded-lg p-5 flex items-center gap-5 cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-colors"
-                  onClick={() => imageRef.current?.click()}
-                >
-                  {preview ? (
-                    <>
-                      <img src={preview} alt="Preview" className="h-20 w-20 object-cover rounded-lg border flex-shrink-0" />
-                      <div>
-                        <p className="text-sm font-medium text-gray-700">Image selected</p>
-                        <p className="text-xs text-gray-400">Click to change</p>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="h-16 w-16 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                        <ImagePlus size={24} className="text-gray-400" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-700">Click to upload</p>
-                        <p className="text-xs text-gray-400">PNG, JPG, WEBP — shared across all variants</p>
-                      </div>
-                    </>
-                  )}
-                  <input
-                    ref={imageRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => {
-                      const f = e.target.files?.[0] || null;
-                      if (f) { setImage(f); setPreview(URL.createObjectURL(f)); }
-                    }}
-                  />
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h2 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                      <BarChart2 size={15} className="text-blue-600" /> Product Variants
+                    </h2>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {variants.length} variant{variants.length !== 1 ? "s" : ""} — all stored in one product entry
+                    </p>
+                  </div>
+                  <Button
+                    type="button" size="sm" variant="outline"
+                    onClick={() => setVariants((p) => [...p, newVariant()])}
+                    className="gap-1.5 text-blue-600 border-blue-200 hover:bg-blue-50"
+                  >
+                    <Plus size={13} /> Add Row
+                  </Button>
+                </div>
+
+                <div className={`grid gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 px-1 ${hasSize ? "grid-cols-[1fr_80px_100px_100px_100px_44px]" : "grid-cols-[80px_100px_100px_100px_44px]"}`}>
+                  {hasSize && <span>Size</span>}
+                  <span>Qty <span className="text-red-500">*</span></span>
+                  <span>Rate (₹)</span>
+                  <span>MRP (₹){mrpRequired && <span className="text-red-500"> *</span>}</span>
+                  <span>Rack</span>
+                  <span />
+                </div>
+
+                <div className="space-y-2">
+                  {variants.map((v, i) => (
+                    <div
+                      key={v.id}
+                      className={`grid gap-2 items-center rounded-lg px-3 py-2 border ${hasSize ? "grid-cols-[1fr_80px_100px_100px_100px_44px]" : "grid-cols-[80px_100px_100px_100px_44px]"} ${isEditing && i === 0 ? "bg-blue-50 border-blue-200" : "bg-gray-50 border-gray-100"}`}
+                    >
+                      {hasSize && (
+                        <select
+                          value={v.size}
+                          onChange={(e) => setVariantField(v.id, "size", e.target.value)}
+                          className="w-full rounded-md border border-gray-200 bg-white px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="">—</option>
+                          {sizeOptions.map((o) => <option key={o} value={o}>{o}</option>)}
+                        </select>
+                      )}
+                      <Input type="number" min="0" value={v.qty} onChange={(e) => setVariantField(v.id, "qty", e.target.value)} placeholder="0" className={`h-8 text-sm ${!v.qty.trim() || Number(v.qty) <= 0 ? "border-red-200" : ""}`} />
+                      <Input type="number" min="0" value={v.rate} onChange={(e) => setVariantField(v.id, "rate", e.target.value)} placeholder="0" className="h-8 text-sm" />
+                      <Input type="number" min="0" value={v.mrp} onChange={(e) => setVariantField(v.id, "mrp", e.target.value)} placeholder="0" className={`h-8 text-sm ${mrpRequired && !v.mrp.trim() ? "border-red-300" : ""}`} />
+                      <Input value={v.rack} onChange={(e) => setVariantField(v.id, "rack", e.target.value)} placeholder="A1" className="h-8 text-sm" />
+                      <button
+                        type="button"
+                        onClick={() => setVariants((p) => { const u = p.filter((x) => x.id !== v.id); return u.length ? u : [newVariant()]; })}
+                        disabled={variants.length === 1}
+                        className="h-8 w-8 flex items-center justify-center rounded-lg text-red-400 hover:bg-red-50 disabled:opacity-20 transition-colors"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  ))}
                 </div>
               </div>
+            }
 
-              {/* Submit */}
-              <div className="flex items-center justify-between pb-6">
-                <Button type="button" variant="outline" onClick={() => navigate(-1)} className="gap-2">
-                  <ArrowLeft size={14} /> Cancel
-                </Button>
-                <Button type="submit" disabled={submitting} className="bg-blue-600 hover:bg-blue-700 text-white gap-2 px-8">
-                  {submitting ? (
-                    <><span className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" /> Saving…</>
-                  ) : (
-                    <><Plus size={15} /> {isEditing ? "Save Changes" : `Save Product${variants.length > 1 ? ` (${variants.length} sizes)` : ""}`}</>
-                  )}
-                </Button>
+            {/* Product Image */}
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+              <h2 className="text-sm font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                <ImagePlus size={15} className="text-blue-600" /> Product Image
+              </h2>
+              <div
+                className="border-2 border-dashed border-gray-200 rounded-lg p-5 flex items-center gap-5 cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-colors"
+                onClick={() => imageRef.current?.click()}
+              >
+                {preview ? (
+                  <>
+                    <img src={preview} alt="Preview" className="h-20 w-20 object-cover rounded-lg border flex-shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">Image selected</p>
+                      <p className="text-xs text-gray-400">Click to change</p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="h-16 w-16 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                      <ImagePlus size={24} className="text-gray-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">Click to upload</p>
+                      <p className="text-xs text-gray-400">PNG, JPG, WEBP — shared across all variants</p>
+                    </div>
+                  </>
+                )}
+                <input
+                  ref={imageRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0] || null;
+                    if (f) { setImage(f); setPreview(URL.createObjectURL(f)); }
+                  }}
+                />
               </div>
+            </div>
 
-            </form>
-          </div>
+            {/* Submit */}
+            <div className="flex items-center justify-between pb-6">
+              <Button type="button" variant="outline" onClick={() => navigate(-1)} className="gap-2">
+                <ArrowLeft size={14} /> Cancel
+              </Button>
+              <Button type="submit" disabled={submitting} className="bg-blue-600 hover:bg-blue-700 text-white gap-2 px-8">
+                {submitting ? (
+                  <><span className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" /> Saving…</>
+                ) : (
+                  <><Plus size={15} /> {isEditing ? "Save Changes" : `Save Product${variants.length > 1 ? ` (${variants.length} sizes)` : ""}`}</>
+                )}
+              </Button>
+            </div>
+
+          </form>
         </div>
       </div>
-    </div>
+    </MainLayout>
   );
 };
 

@@ -1,7 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import Navbar from "@/components/Navbar";
-import Sidebar from "@/components/Sidebar";
 import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
 import { Product } from "@/types";
@@ -15,6 +13,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import OmsCart from "@/components/OmsCart";
+import MainLayout from "@/components/MainLayoutProps";
 
 // ─────────────────────────────────────────────────────────────────────────────
 const RetailerHome = () => {
@@ -175,13 +174,9 @@ const RetailerHome = () => {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <div className="w-64 fixed top-0 left-0 h-full z-10"><Sidebar /></div>
-
-      <div className="flex-1 ml-64 flex flex-col">
-        <Navbar />
-        <div className="flex-1 overflow-y-auto pt-16">
-          <div className="container mx-auto px-4 py-5 max-w-7xl">
+    <MainLayout>
+      <div className="px-4">
+          <div className="container mx-auto px-2 max-w-7xl">
 
             {/* ── Page header ── */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
@@ -259,8 +254,7 @@ const RetailerHome = () => {
             )}
           </div>
         </div>
-      </div>
-    </div>
+    </MainLayout>
   );
 };
 

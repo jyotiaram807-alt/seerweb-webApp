@@ -9,6 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { apiUrl } from "@/url";
 import Sidebar from "@/components/Sidebar";
+import MainLayout from "@/components/MainLayoutProps";
 
 const RetailerOrders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -74,19 +75,9 @@ const RetailerOrders = () => {
       : orders.filter((o) => o.status === activeTab);
 
   return (
-  <div className="flex h-screen overflow-hidden">
-    {/* Sidebar */}
-    <div className="w-64 fixed top-0 left-0 h-full">
-      <Sidebar />
-    </div>
-
-    {/* Main Content Area */}
-    <div className="flex-1 ml-64 flex flex-col">
-      <Navbar />
-
-      {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto pt-16">
-        <div className="container mx-auto px-4 mt-4 mb-6">
+  <MainLayout>
+  <div className="px-4">
+        <div className="container mx-auto px-2 max-w-7xl">
           <p className="text-gray-600 text-lg mb-4">Track your order history and status</p>
 
           <div className="bg-white rounded-lg shadow">
@@ -130,9 +121,8 @@ const RetailerOrders = () => {
             </div>
           </div>
         </div>
-      </div>
-    </div>
-  </div>
+        </div>
+</MainLayout>
 )
 
 };
