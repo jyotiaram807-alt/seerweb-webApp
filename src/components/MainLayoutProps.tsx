@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
 
@@ -7,10 +7,23 @@ interface MainLayoutProps {
 }
 
 const MainLayout = ({ children }: MainLayoutProps) => {
-  const [collapsed, setCollapsed] = useState(false);
+
+  // Load sidebar state from localStorage
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    return localStorage.getItem("sidebar-collapsed") === "true";
+  });
+
+  // Save sidebar state whenever it changes
+  useEffect(() => {
+    localStorage.setItem(
+      "sidebar-collapsed",
+      String(collapsed)
+    );
+  }, [collapsed]);
 
   return (
     <div className="min-h-screen bg-gray-100">
+
       {/* Sidebar */}
       <Sidebar
         collapsed={collapsed}
@@ -22,8 +35,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
 
       {/* Main Content */}
       <main
-        className={`pt-20 transition-all duration-300
-        ${
+        className={`pt-20 transition-all duration-300 ${
           collapsed
             ? "lg:ml-20"
             : "lg:ml-64"
@@ -33,6 +45,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
           {children}
         </div>
       </main>
+
     </div>
   );
 };

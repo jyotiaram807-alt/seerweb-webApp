@@ -3,17 +3,19 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { apiUrl } from "@/url";
 import { toast } from "sonner";
-import MainLayout from "@/components/MainLayoutProps";
+import Navbar from "@/components/Navbar";
 import { DynamicSelect } from "@/components/DynamicSelect";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { getImageUrl } from "@/lib/imageUrl"; // ← import shared utility
+import { getImageUrl } from "@/lib/imageUrl";
 import {
   ArrowLeft, Plus, Trash2, ImagePlus, Tag,
   BarChart2, AlignLeft, Layers, Package, X, ChevronDown,
 } from "lucide-react";
+import React from "react";
+import MainLayout from "@/components/MainLayoutProps";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -158,8 +160,6 @@ const AddProduct = () => {
 
     setColor(editProduct.color || existingAttrs.color || "");
 
-    // ── Fix: use getImageUrl() so the preview uses the same /backend/public
-    //         prefix as ProductCard — not the old inline template ──────────
     if (editProduct.image) {
       setPreview(getImageUrl(editProduct.image));
     }
@@ -399,9 +399,9 @@ const AddProduct = () => {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
+    // No sidebar: full-width layout so all form fields are easily accessible
     <MainLayout>
       <div className="px-4">
-        <div className="container mx-auto px-2">
 
           {/* Header */}
           <div className="flex items-center gap-4 mb-6">
@@ -425,16 +425,16 @@ const AddProduct = () => {
 
           <form onSubmit={handleSubmit} className="space-y-6">
 
-            {/* Product Info */}
+            {/* ── Product Info ── */}
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
               <h2 className="text-sm font-semibold text-gray-800 mb-4 flex items-center gap-2">
                 <Package size={15} className="text-blue-600" /> Product Info
               </h2>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
 
-                {/* Product Name */}
-                <div className="md:col-span-2 space-y-1.5">
+                {/* Product Name — full row */}
+                <div className="md:col-span-2 lg:col-span-1 space-y-1.5">
                   <Label className="text-sm font-medium text-gray-700 flex items-center gap-1">
                     <Tag size={13} className="text-gray-400" />
                     Product Name <span className="text-red-500">*</span>
@@ -447,7 +447,7 @@ const AddProduct = () => {
                   />
                 </div>
 
-                {/* Dynamic Fields */}
+                {/* Dynamic Fields — 3 columns on large screens */}
                 {allFields.map((field) => {
                   const val = attrValues[field.field_key] ?? "";
                   const opts =
@@ -496,12 +496,10 @@ const AddProduct = () => {
                   );
                 })}
 
-                {/* Variants (only when no size) */}
+                {/* Simple-product variant fields (no size schema) */}
                 {!hasSize &&
                   variants.map((v, i) => (
-                    <div key={v.id || i} className="grid grid-cols-1 md:grid-cols-3 gap-4 md:col-span-2">
-
-                      {/* Quantity */}
+                    <React.Fragment key={v.id || i}>
                       <div className="space-y-1.5">
                         <Label className="text-sm font-medium text-gray-700 flex items-center gap-1">
                           <Layers size={13} className="text-gray-400" /> Quantity <span className="text-red-500">*</span>
@@ -512,16 +510,13 @@ const AddProduct = () => {
                           value={v.qty}
                           onChange={(e) => setVariantField(v.id, "qty", e.target.value)}
                           placeholder="0"
-                          className={`h-8 text-sm ${
-                            !v.qty || Number(v.qty) <= 0 ? "border-red-200" : ""
-                          }`}
+                          className={!v.qty || Number(v.qty) <= 0 ? "border-red-200" : ""}
                         />
                       </div>
 
-                      {/* Rate */}
                       <div className="space-y-1.5">
                         <Label className="text-sm font-medium text-gray-700 flex items-center gap-1">
-                          <Layers size={13} className="text-gray-400" /> RATE <span className="text-red-500">*</span>
+                          <Layers size={13} className="text-gray-400" /> Rate (₹) <span className="text-red-500">*</span>
                         </Label>
                         <Input
                           type="number"
@@ -529,14 +524,12 @@ const AddProduct = () => {
                           value={v.rate}
                           onChange={(e) => setVariantField(v.id, "rate", e.target.value)}
                           placeholder="0"
-                          className="h-8 text-sm"
                         />
                       </div>
 
-                      {/* MRP */}
                       <div className="space-y-1.5">
                         <Label className="text-sm font-medium text-gray-700 flex items-center gap-1">
-                          <Layers size={13} className="text-gray-400" /> MRP <span className="text-red-500">*</span>
+                          <Layers size={13} className="text-gray-400" /> MRP (₹) <span className="text-red-500">*</span>
                         </Label>
                         <Input
                           type="number"
@@ -544,14 +537,14 @@ const AddProduct = () => {
                           value={v.mrp}
                           onChange={(e) => setVariantField(v.id, "mrp", e.target.value)}
                           placeholder="0"
-                          className={`h-8 text-sm ${
-                            mrpRequired && !v.mrp ? "border-red-300" : ""
-                          }`}
+                          className={mrpRequired && !v.mrp ? "border-red-300" : ""}
                         />
                       </div>
+                    </React.Fragment>
+                  ))
+                }
 
-                    </div>
-                  ))}{/* Color */}
+                {/* Color */}
                 <div className="space-y-1.5">
                   <Label className="text-sm font-medium text-gray-700 flex items-center gap-1">
                     <Layers size={13} className="text-gray-400" /> Color / Style
@@ -563,8 +556,8 @@ const AddProduct = () => {
                   />
                 </div>
 
-                {/* Description */}
-                <div className="md:col-span-2 space-y-1.5">
+                {/* Description — full row */}
+                <div className="md:col-span-2 lg:col-span-1 space-y-1.5">
                   <Label className="text-sm font-medium text-gray-700 flex items-center gap-1">
                     <AlignLeft size={13} className="text-gray-400" /> Description
                   </Label>
@@ -578,7 +571,7 @@ const AddProduct = () => {
               </div>
             </div>
 
-            {/* Size selector */}
+            {/* ── Size selector ── */}
             {sizeOptions.length > 0 && (
               <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
                 <h2 className="text-sm font-semibold text-gray-800 mb-1 flex items-center gap-2">
@@ -601,8 +594,8 @@ const AddProduct = () => {
               </div>
             )}
 
-            {/* Variant rows */}
-            {hasSize && 
+            {/* ── Variant rows (size-based) ── */}
+            {hasSize && (
               <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div>
@@ -622,8 +615,9 @@ const AddProduct = () => {
                   </Button>
                 </div>
 
-                <div className={`grid gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 px-1 ${hasSize ? "grid-cols-[1fr_80px_100px_100px_100px_44px]" : "grid-cols-[80px_100px_100px_100px_44px]"}`}>
-                  {hasSize && <span>Size</span>}
+                {/* Header */}
+                <div className="grid grid-cols-[1fr_80px_100px_100px_100px_44px] gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 px-1">
+                  <span>Size</span>
                   <span>Qty <span className="text-red-500">*</span></span>
                   <span>Rate (₹)</span>
                   <span>MRP (₹){mrpRequired && <span className="text-red-500"> *</span>}</span>
@@ -635,18 +629,18 @@ const AddProduct = () => {
                   {variants.map((v, i) => (
                     <div
                       key={v.id}
-                      className={`grid gap-2 items-center rounded-lg px-3 py-2 border ${hasSize ? "grid-cols-[1fr_80px_100px_100px_100px_44px]" : "grid-cols-[80px_100px_100px_100px_44px]"} ${isEditing && i === 0 ? "bg-blue-50 border-blue-200" : "bg-gray-50 border-gray-100"}`}
+                      className={`grid grid-cols-[1fr_80px_100px_100px_100px_44px] gap-2 items-center rounded-lg px-3 py-2 border ${
+                        isEditing && i === 0 ? "bg-blue-50 border-blue-200" : "bg-gray-50 border-gray-100"
+                      }`}
                     >
-                      {hasSize && (
-                        <select
-                          value={v.size}
-                          onChange={(e) => setVariantField(v.id, "size", e.target.value)}
-                          className="w-full rounded-md border border-gray-200 bg-white px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                          <option value="">—</option>
-                          {sizeOptions.map((o) => <option key={o} value={o}>{o}</option>)}
-                        </select>
-                      )}
+                      <select
+                        value={v.size}
+                        onChange={(e) => setVariantField(v.id, "size", e.target.value)}
+                        className="w-full rounded-md border border-gray-200 bg-white px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">—</option>
+                        {sizeOptions.map((o) => <option key={o} value={o}>{o}</option>)}
+                      </select>
                       <Input type="number" min="0" value={v.qty} onChange={(e) => setVariantField(v.id, "qty", e.target.value)} placeholder="0" className={`h-8 text-sm ${!v.qty.trim() || Number(v.qty) <= 0 ? "border-red-200" : ""}`} />
                       <Input type="number" min="0" value={v.rate} onChange={(e) => setVariantField(v.id, "rate", e.target.value)} placeholder="0" className="h-8 text-sm" />
                       <Input type="number" min="0" value={v.mrp} onChange={(e) => setVariantField(v.id, "mrp", e.target.value)} placeholder="0" className={`h-8 text-sm ${mrpRequired && !v.mrp.trim() ? "border-red-300" : ""}`} />
@@ -663,9 +657,9 @@ const AddProduct = () => {
                   ))}
                 </div>
               </div>
-            }
+            )}
 
-            {/* Product Image */}
+            {/* ── Product Image ── */}
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
               <h2 className="text-sm font-semibold text-gray-800 mb-4 flex items-center gap-2">
                 <ImagePlus size={15} className="text-blue-600" /> Product Image
@@ -706,7 +700,7 @@ const AddProduct = () => {
               </div>
             </div>
 
-            {/* Submit */}
+            {/* ── Submit ── */}
             <div className="flex items-center justify-between pb-6">
               <Button type="button" variant="outline" onClick={() => navigate(-1)} className="gap-2">
                 <ArrowLeft size={14} /> Cancel
@@ -721,9 +715,8 @@ const AddProduct = () => {
             </div>
 
           </form>
-        </div>
-      </div>
-    </MainLayout>
+          </div>
+      </MainLayout>
   );
 };
 

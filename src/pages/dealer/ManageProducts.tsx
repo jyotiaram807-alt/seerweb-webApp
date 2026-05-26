@@ -388,7 +388,13 @@ const ManageProducts = () => {
                 <Button onClick={handleImportClick} variant="outline" className="border-royal text-royal hover:bg-royal/10 gap-2">
                   <FileUp size={16} /> Import Excel
                 </Button>
-                <Button onClick={() => navigate("/dealer/products/add")} className="bg-royal hover:bg-royal-dark gap-2">
+                <Button
+                  onClick={() => {
+                    localStorage.setItem("sidebar-collapsed", "true");
+                    navigate("/dealer/products/add");
+                  }}
+                  className="bg-royal hover:bg-royal-dark gap-2"
+                >
                   <Plus size={16} /> Add Product
                 </Button>
               </div>
