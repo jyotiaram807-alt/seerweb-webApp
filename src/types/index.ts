@@ -130,6 +130,11 @@ export interface Order {
   retailerName: string;
   dealerId:     string;
   total:        number;
+  phone:        string;
+  address:      string;
+  dealerCompanyName: string;
+  dealerPhone: string;
+  dealerAddress: string;
   notes:        string;
   status:       OrderStatus;
   createdAt:    string;
@@ -150,6 +155,7 @@ export interface Order {
       name:  string;
       price: number;
       mrp?: number;
+      rate?: number;
     };
   }[];
 }

@@ -112,39 +112,31 @@ const sortSizes = (sizes: string[]) =>
   });
 
 const resolveLinePricing = (item: OrderLineItem, preferLowerPriceAsRate: boolean): LinePricing => {
-  console.log("resolveLinePricing:", item);
-  const snapshot = item.attributes_snapshot ?? {};
-  const snapshotRate = Number(snapshot.rate ?? snapshot.dealer_rate ?? snapshot.wholesale_rate ?? 0);
-  const snapshotMrp = Number(snapshot.mrp ?? 0);
-  const orderPrice = Number(item.price ?? 0);
-  const productPrice = Number(item.product?.price ?? 0);
+  // Prefer explicit DB-backed values from backend response.
+  // Keep MRP and Rate strictly separate.
   const productMrp = Number(item.product?.mrp ?? 0);
+  const productRate = Number(item.product?.rate ?? 0);
 
-  if (snapshotRate > 0 || snapshotMrp > 0) {
-    return {
-      rate: snapshotRate > 0 ? snapshotRate : orderPrice || productPrice || snapshotMrp,
-      mrp: snapshotMrp > 0 ? snapshotMrp : Math.max(snapshotRate || 0, orderPrice || 0, productMrp || 0, productPrice || 0),
-    };
+  const orderPrice = Number(item.price ?? 0);
+  const productFallbackPrice = Number(item.product?.price ?? 0);
+
+  // Rate: product.rate if present and non-zero, else fallback to order/item price.
+  // Prefer DB-backed rate/mrp from backend response if they exist at line level.
+  const lineRate = Number((item as any).rate ?? 0);
+  const lineMrp = Number((item as any).mrp ?? 0);
+
+  const rate = productRate > 0 ? productRate : (lineRate > 0 ? lineRate : (orderPrice || productFallbackPrice || 0));
+
+  // MRP: never derive from rate.
+  const mrp = productMrp > 0 ? productMrp : (lineMrp > 0 ? lineMrp : (productFallbackPrice || orderPrice || 0));
+
+
+  // Keep legacy special-case, but never overwrite mrp=rate.
+  if (preferLowerPriceAsRate && rate > 0 && productFallbackPrice > 0) {
+    return { rate: Math.min(rate, productFallbackPrice), mrp };
   }
 
-  if (productMrp > 0) {
-    return {
-      rate: orderPrice || Math.min(productPrice || productMrp, productMrp),
-      mrp: Math.max(productMrp, orderPrice || 0, productPrice || 0),
-    };
-  }
-
-  if (preferLowerPriceAsRate && orderPrice > 0 && productPrice > 0 && orderPrice !== productPrice) {
-    return {
-      rate: Math.min(orderPrice, productPrice),
-      mrp: Math.max(orderPrice, productPrice),
-    };
-  }
-
-  return {
-    rate: orderPrice || productPrice || 0,
-    mrp: productPrice || orderPrice || 0,
-  };
+  return { rate, mrp };
 };
 
 const getItemMeta = (item: OrderLineItem, preferLowerPriceAsRate: boolean) => {
@@ -154,7 +146,8 @@ const getItemMeta = (item: OrderLineItem, preferLowerPriceAsRate: boolean) => {
   return {
     bookingType: snapshot.booking_type ?? garmentMeta.booking_type ?? "Current",
     designNo: snapshot.design_number ?? garmentMeta.design_number ?? garmentMeta.designNumber ?? "-",
-    mrp: Number(snapshot.mrp ?? garmentMeta.mrp ?? pricing.mrp),
+    // Do not let snapshots overwrite DB-backed MRP.
+    mrp: pricing.mrp,
     rate: pricing.rate,
     setQuantity: Number(snapshot.set_quantity ?? 0),
     color: item.color ?? garmentMeta.selectedColor ?? snapshot.color ?? "",
@@ -272,7 +265,7 @@ const OrdersList: React.FC<OrdersListProps> = ({
     () => (selectedOrder ? groupOrderItems(selectedOrder, preferLowerPriceAsRate) : null),
     [preferLowerPriceAsRate, selectedOrder]
   );
-  console.log("Selected Order Groups:", selectedOrder);
+  
   const handlePrintInvoice = (order: Order) => {
     const invoiceWindow = window.open("", "_blank", "width=1200,height=900");
     if (!invoiceWindow) return;
@@ -293,11 +286,8 @@ const OrdersList: React.FC<OrdersListProps> = ({
 
             return `
               <td class="size-cell">
-                <div class="metric qty-label">Qty</div>
                 <div class="metric qty-value">${line.qty}</div>
-                <div class="metric rate-label">Rate</div>
                 <div class="metric rate-value">${formatMoney(line.rate)}</div>
-                <div class="metric mrp-label">MRP</div>
                 <div class="metric mrp-value">${formatMoney(line.mrp)}</div>
               </td>
             `;
@@ -384,17 +374,17 @@ const OrdersList: React.FC<OrdersListProps> = ({
               <div class="meta-card">
                 <div class="meta-title">Consignee Details</div>
                 <div class="meta-body">
-                  <div><strong>To:</strong> ${order.retailerName || order.storeName || "-"}</div>
-                  <div><strong>Retailer ID:</strong> ${order.retailerId || "-"}</div>
-                  <div><strong>Dealer ID:</strong> ${order.dealerId || "-"}</div>
+                  <div><strong>To:</strong> ${order.storeName || "-"}</div>
+                  <div><strong>Phone:</strong> ${order.phone || "-"}</div>
+                  <div><strong>Address:</strong> ${order.address || "-"}</div>
                 </div>
               </div>
               <div class="meta-card">
                 <div class="meta-title">Party Details</div>
                 <div class="meta-body">
-                  <div><strong>Sales By:</strong> ${order.order_by || "-"}</div>
-                  <div><strong>Salesman ID:</strong> ${order.order_by_id ?? "-"}</div>
-                  <div><strong>Status:</strong> ${order.status}</div>
+                  <div><strong>Sale By:</strong> ${order.dealerCompanyName || "-"}</div>
+                  <div><strong>Phone:</strong> ${order.dealerPhone ?? "-"}</div>
+                  <div><strong>Address:</strong> ${order.dealerAddress}</div>
                 </div>
               </div>
               <div class="meta-card">

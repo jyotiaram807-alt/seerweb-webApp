@@ -194,6 +194,8 @@ const DealerOrders = () => {
     setFilteredOrders(getFilteredOrders());
   }, [activeTab, orders]);
 
+
+  console.log("Orders:", filteredOrders);
   const statusConfig = [
     { key: "pending", label: "Pending", icon: Clock, color: "text-yellow-500", bgColor: "bg-yellow-50" },
     { key: "approved", label: "Approved", icon: CheckCircle, color: "text-blue-500", bgColor: "bg-blue-50" },
