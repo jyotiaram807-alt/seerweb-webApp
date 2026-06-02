@@ -95,8 +95,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     if (quantity <= 0) return;
 
     const pId  = String(product.id);
+    // FIX: removed invalid `garmentMeta` reference — use variant.color or product color directly
     const vItem: CartVariantItem = {
-            variantId: `${variant.id}-${(variant.color || garmentMeta?.selectedColor || "").toLowerCase() || "default"}`,
+      variantId: variant.id,
       size:      variant.size  || "",
       color:     variant.color || product.attributes?.color || "",
       price:     variant.rate  || variant.mrp || product.price,
@@ -140,6 +141,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
             businessTypeId: product.business_type_id ?? null,
             attributes:     product.attributes ?? {},
             variants:       [vItem],
+            color:          variant.color || product.attributes?.color || "",
           },
         ];
       }
@@ -232,12 +234,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const addToCart = (product: Product, quantity: number) => {
     if (quantity <= 0) return;
 
-    // If product has variants, delegate to addVariantToCart
-    if (product.variants && product.variants.length > 0) {
-      // Add all variants or just call addVariantToCart for each — here we
-      // treat the whole product as a single "no-size" variant (variantId = 0)
-    }
-
     const pId = String(product.id);
     const vItem: CartVariantItem = {
       variantId: 0,           // 0 = no variant
@@ -281,6 +277,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
             businessTypeId: product.business_type_id ?? null,
             attributes:     product.attributes ?? {},
             variants:       [vItem],
+            color:          product.attributes?.color || "",
           },
         ];
       }

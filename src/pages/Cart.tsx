@@ -216,8 +216,8 @@ const Cart = () => {
   // ── JSX ───────────────────────────────────────────────────────────────────
   return (
     <MainLayout>
-      <div className="px-8 py-6">
-          <div className="container mx-auto px-4 py-6">
+      <div className="px-4">
+          <div className="container mx-auto px-2">
 
             {/* Page Header */}
             <div className="mb-6">
