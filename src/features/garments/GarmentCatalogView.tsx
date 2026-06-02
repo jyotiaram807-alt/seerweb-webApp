@@ -1,14 +1,22 @@
-import { useMemo, useState } from "react";
-import { Package2, Search, SlidersHorizontal } from "lucide-react";
+import { CSSProperties, useEffect, useMemo, useRef, useState } from "react";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
+import { Download, Package2, Search, Share2, SlidersHorizontal } from "lucide-react";
 import { Product } from "@/types";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/context/AuthContext";
+import { getProxiedImageUrl } from "@/lib/imageUrl";
 import { GarmentProductCard } from "./GarmentProductCard";
+import { GARMENT_CART_SETTINGS_UPDATED_EVENT, getGarmentCartSettings } from "./cartSettings";
 import {
   getGarmentBookingType,
   getGarmentCategory,
   getGarmentColors,
   getGarmentDesignNumber,
   getGarmentFabric,
+  getGarmentGallery,
   getGarmentSubCategory,
   isNewArrivalGarment,
   isTrendingGarment,
@@ -21,7 +29,12 @@ interface GarmentCatalogViewProps {
 }
 
 export function GarmentCatalogView({ products, title, subtitle }: GarmentCatalogViewProps) {
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
+  const [cartSettings, setCartSettings] = useState(() => getGarmentCartSettings(user?.id));
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const [exporting, setExporting] = useState<null | "download" | "whatsapp">(null);
+  const pdfContainerRef = useRef<HTMLDivElement>(null);
   const [filters, setFilters] = useState({
     bookingType: "all",
     brand: "all",
@@ -34,14 +47,37 @@ export function GarmentCatalogView({ products, title, subtitle }: GarmentCatalog
     design: "",
   });
 
+  useEffect(() => {
+    const loadSettings = () => {
+      setCartSettings(getGarmentCartSettings(user?.id));
+    };
+
+    loadSettings();
+    window.addEventListener("storage", loadSettings);
+    window.addEventListener(GARMENT_CART_SETTINGS_UPDATED_EVENT, loadSettings);
+
+    return () => {
+      window.removeEventListener("storage", loadSettings);
+      window.removeEventListener(GARMENT_CART_SETTINGS_UPDATED_EVENT, loadSettings);
+    };
+  }, [user?.id]);
+
+  useEffect(() => {
+    const closeMenu = () => setExportMenuOpen(false);
+    window.addEventListener("click", closeMenu);
+
+    return () => {
+      window.removeEventListener("click", closeMenu);
+    };
+  }, []);
+
   const optionSets = useMemo(() => ({
     bookingTypes: Array.from(new Set(products.map(getGarmentBookingType).filter(Boolean))).sort(),
     brands: Array.from(new Set(products.map((product) => product.brand || product.attributes?.brand).filter(Boolean))).sort(),
     categories: Array.from(new Set(products.map(getGarmentCategory).filter(Boolean))).sort(),
     subCategories: Array.from(new Set(products.map(getGarmentSubCategory).filter(Boolean))).sort(),
     fabrics: Array.from(new Set(products.map(getGarmentFabric).filter(Boolean))).sort(),
-    sizes: Array.from(new Set(products.flatMap((product) => (product.variants ?? []).map((variant) => variant.size)).filter(Boolean))).sort(),
-    colors: Array.from(new Set(products.flatMap(getGarmentColors).filter(Boolean))).sort(),
+    sizes: Array.from(new Set(products.flatMap((product) => (product.variants ?? []).map((variant) => variant.size)).filter(Boolean))).sort()
   }), [products]);
 
   const filteredProducts = useMemo(() => {
@@ -78,6 +114,268 @@ export function GarmentCatalogView({ products, title, subtitle }: GarmentCatalog
 
   const setFilter = (key: keyof typeof filters, value: string) => {
     setFilters((current) => ({ ...current, [key]: value }));
+  };
+
+  const productGridStyle = useMemo(() => {
+    return {
+      "--garment-cards-per-row": String(cartSettings.cardsPerRow),
+    } as CSSProperties;
+  }, [cartSettings.cardsPerRow]);
+
+  const loadImageAsBase64 = async (url: string, retries = 3): Promise<string> => {
+    if (!url) return "";
+
+    const attemptLoad = (delay = 0): Promise<string> =>
+      new Promise((resolve) => {
+        setTimeout(() => {
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+
+          const timeout = setTimeout(() => resolve(""), 10000);
+
+          img.onload = () => {
+            clearTimeout(timeout);
+            try {
+              const canvas = document.createElement("canvas");
+              const maxDim = 900;
+              const ratio = Math.min(maxDim / img.naturalWidth, maxDim / img.naturalHeight, 1.8);
+              canvas.width = Math.max(img.naturalWidth * ratio, 1);
+              canvas.height = Math.max(img.naturalHeight * ratio, 1);
+              const ctx = canvas.getContext("2d");
+              if (!ctx) {
+                resolve("");
+                return;
+              }
+              ctx.imageSmoothingEnabled = true;
+              ctx.imageSmoothingQuality = "high";
+              ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+              resolve(canvas.toDataURL("image/jpeg", 0.95));
+            } catch {
+              resolve("");
+            }
+          };
+
+          img.onerror = () => {
+            clearTimeout(timeout);
+            resolve("");
+          };
+
+          img.src = `${url}${url.includes("?") ? "&" : "?"}_t=${Date.now()}`;
+        }, delay);
+      });
+
+    for (let index = 0; index < retries; index += 1) {
+      const result = await attemptLoad(index * 1200);
+      if (result) return result;
+    }
+
+    return "";
+  };
+
+  const buildCatalogPdf = async (productsToExport: Product[]) => {
+    if (!pdfContainerRef.current) {
+      throw new Error("Catalog container is not ready");
+    }
+
+    const pdf = new jsPDF("p", "mm", "a4", false);
+    const pageWidth = 210;
+    const pageHeight = 297;
+    const margin = 15;
+    const contentWidth = pageWidth - 2 * margin;
+    const contentHeight = pageHeight - 2 * margin;
+    const imageSectionHeight = contentHeight * 0.72;
+    const detailsSectionHeight = contentHeight * 0.28;
+    const fileName = `${(user?.company_name || "Product").replace(/\s+/g, "-")}-Catalog.pdf`;
+
+    pdfContainerRef.current.innerHTML = "";
+
+    const productData = await Promise.all(
+      productsToExport.map(async (product) => {
+        let imgBase64 = "";
+        const gallery = getGarmentGallery(product);
+        const candidatePath = gallery[0] || product.image || "";
+
+        if (candidatePath) {
+          const proxiedUrl = getProxiedImageUrl(candidatePath);
+          if (proxiedUrl) {
+            imgBase64 = await loadImageAsBase64(proxiedUrl);
+          }
+        }
+
+        return { product, imgBase64 };
+      })
+    );
+
+    for (let pageIndex = 0; pageIndex < productData.length; pageIndex += 1) {
+      const { product, imgBase64 } = productData[pageIndex];
+      const designNo = getGarmentDesignNumber(product) || product.name;
+      const variants = product.variants ?? [];
+      const sizes = Array.from(new Set(variants.map((variant) => variant.size).filter(Boolean)));
+      const rates = sizes.map((size) => {
+        const matched = variants.find((variant) => variant.size === size);
+        return matched?.rate || matched?.mrp || product.price;
+      });
+
+      const tableHTML =
+        sizes.length > 0
+          ? `
+            <div style="width:100%;padding:4mm;background:#ffffff;border-radius:4mm;">
+              <div style="font-size:11pt;font-weight:700;margin-bottom:2mm;">Design No : ${designNo}</div>
+              <table style="width:100%;border-collapse:collapse;font-size:10pt;text-align:center;">
+                <tr>
+                  <td style="border:1px solid #111827;padding:2mm;font-weight:700;">Size</td>
+                  ${sizes
+                    .map(
+                      (size) =>
+                        `<td style="border:1px solid #111827;padding:2mm;font-weight:700;">${size}</td>`
+                    )
+                    .join("")}
+                </tr>
+                <tr>
+                  <td style="border:1px solid #111827;padding:2mm;font-weight:700;">MRP</td>
+                  ${rates
+                    .map(
+                      (rate) =>
+                        `<td style="border:1px solid #111827;padding:2mm;">${Number(rate).toLocaleString("en-IN")}</td>`
+                    )
+                    .join("")}
+                </tr>
+              </table>
+            </div>
+          `
+          : `
+            <div style="width:100%;padding:4mm;background:#ffffff;border-radius:4mm;">
+              <div style="font-size:11pt;font-weight:700;margin-bottom:2mm;">Model: ${product.name}</div>
+              <table style="width:100%;border-collapse:collapse;font-size:10pt;text-align:center;">
+                <tr>
+                  <td style="border:1px solid #111827;padding:2mm;font-weight:700;">Config</td>
+                  <td style="border:1px solid #111827;padding:2mm;font-weight:700;">N/A/N/A</td>
+                </tr>
+                <tr>
+                  <td style="border:1px solid #111827;padding:2mm;font-weight:700;">MRP</td>
+                  <td style="border:1px solid #111827;padding:2mm;">${product.price.toLocaleString("en-IN")}</td>
+                </tr>
+              </table>
+            </div>
+          `;
+
+      const productDiv = document.createElement("div");
+      productDiv.style.width = `${contentWidth}mm`;
+      productDiv.style.height = `${contentHeight}mm`;
+      productDiv.style.background = "#fafbfc";
+      productDiv.style.fontFamily = "Arial, sans-serif";
+      productDiv.style.color = "#1f2937";
+      productDiv.style.display = "flex";
+      productDiv.style.flexDirection = "column";
+      productDiv.innerHTML = `
+        <div style="width:100%;height:${imageSectionHeight}mm;background:#ffffff;border-radius:0 0 8mm 8mm;position:relative;display:flex;align-items:center;justify-content:center;padding:10mm;overflow:hidden;">
+          ${
+            imgBase64
+              ? `<img src="${imgBase64}" style="max-width:${contentWidth * 0.82}mm;max-height:100%;object-fit:contain;" />`
+              : `<div style="width:80mm;height:80mm;background:#e5e7eb;border-radius:8mm;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:12pt;border:2px dashed #cbd5e1;">No Image</div>`
+          }
+          <div style="position:absolute;top:4mm;right:4mm;background:rgba(255,255,255,0.88);padding:2mm 4mm;border-radius:2mm;font-size:10pt;font-weight:700;color:#2563eb;max-width:60%;text-align:right;">
+            ${user?.company_name || ""}
+          </div>
+        </div>
+        <div style="width:100%;height:${detailsSectionHeight}mm;padding:8mm 12mm;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;background:#ffffff;border-radius:8mm 8mm 0 0;">
+          <div style="text-align:center;margin-bottom:4mm;">
+            <h2 style="font-size:16pt;font-weight:700;color:#1f2937;margin:0 0 2mm 0;">${product.name}</h2>
+          </div>
+          ${tableHTML}
+        </div>
+      `;
+
+      pdfContainerRef.current.appendChild(productDiv);
+
+      const imgElement = productDiv.querySelector("img") as HTMLImageElement | null;
+      if (imgElement && imgBase64) {
+        await new Promise((resolve) => {
+          const done = () => resolve(true);
+          if (imgElement.complete && imgElement.naturalWidth > 0) {
+            done();
+            return;
+          }
+          imgElement.onload = done;
+          imgElement.onerror = done;
+          setTimeout(done, 2000);
+        });
+      }
+
+      const canvas = await html2canvas(productDiv, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: false,
+        logging: false,
+        backgroundColor: "#fafbfc",
+        imageTimeout: 3000,
+      });
+
+      if (pageIndex > 0) pdf.addPage();
+      pdf.addImage(canvas.toDataURL("image/jpeg", 0.92), "JPEG", margin, margin, contentWidth, contentHeight * 0.95);
+      pdfContainerRef.current.removeChild(productDiv);
+    }
+
+    return {
+      blob: pdf.output("blob"),
+      fileName,
+    };
+  };
+
+  const exportCatalog = async (mode: "download" | "whatsapp") => {
+    if (filteredProducts.length === 0) {
+      toast.error("No products available to export");
+      return;
+    }
+
+    setExportMenuOpen(false);
+    setExporting(mode);
+    const toastId = toast.loading("Generating catalog...");
+
+    try {
+      const { blob, fileName } = await buildCatalogPdf(filteredProducts);
+      const file = new File([blob], fileName, { type: "application/pdf" });
+      const objectUrl = URL.createObjectURL(blob);
+
+      if (mode === "download") {
+        const link = document.createElement("a");
+        link.href = objectUrl;
+        link.download = fileName;
+        link.click();
+        toast.success(`Catalog downloaded for ${filteredProducts.length} products`, { id: toastId });
+      } else {
+        const shareText = `Catalog for ${user?.company_name || "our products"} (${filteredProducts.length} products)`;
+        const navigatorWithShare = navigator as Navigator & {
+          canShare?: (data: ShareData) => boolean;
+        };
+
+        if (
+          typeof navigator.share === "function" &&
+          (!navigatorWithShare.canShare || navigatorWithShare.canShare({ files: [file] }))
+        ) {
+          await navigator.share({
+            title: fileName,
+            text: shareText,
+            files: [file],
+          });
+          toast.success("Catalog shared", { id: toastId });
+        } else {
+          const link = document.createElement("a");
+          link.href = objectUrl;
+          link.download = fileName;
+          link.click();
+          window.open(`https://wa.me/?text=${encodeURIComponent(`${shareText}. Attach the downloaded PDF.`)}`, "_blank");
+          toast.success("Catalog downloaded. Attach the PDF in WhatsApp.", { id: toastId });
+        }
+      }
+
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 5000);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to export catalog", { id: toastId });
+    } finally {
+      setExporting(null);
+    }
   };
 
   const renderSelect = (key: keyof typeof filters, values: string[], placeholder: string) => (
@@ -120,18 +418,64 @@ export function GarmentCatalogView({ products, title, subtitle }: GarmentCatalog
       </div>
 
       <div className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-          <SlidersHorizontal size={13} />
-          Filters
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+            <SlidersHorizontal size={13} />
+            Filters
+          </div>
+          <div className="relative">
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-2xl"
+              disabled={exporting !== null}
+              onClick={(event) => {
+                event.stopPropagation();
+                setExportMenuOpen((current) => !current);
+              }}
+            >
+              {exporting ? (
+                <>
+                  <Download size={15} />
+                  Exporting...
+                </>
+              ) : (
+                <>
+                  <Download size={15} />
+                  Export Catalog
+                </>
+              )}
+            </Button>
+            {exportMenuOpen ? (
+              <div
+                className="absolute right-0 top-[calc(100%+8px)] z-20 min-w-[220px] rounded-2xl border border-slate-200 bg-white p-2 shadow-xl"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                  onClick={() => exportCatalog("download")}
+                >
+                  <Download size={16} />
+                  Download
+                </button>
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                  onClick={() => exportCatalog("whatsapp")}
+                >
+                  <Share2 size={16} />
+                  Share via WhatsApp
+                </button>
+              </div>
+            ) : null}
+          </div>
         </div>
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-          {renderSelect("bookingType", optionSets.bookingTypes, "All Booking Types")}
           {renderSelect("brand", optionSets.brands, "All Brands")}
           {renderSelect("category", optionSets.categories, "All Categories")}
           {renderSelect("subCategory", optionSets.subCategories, "All Sub Categories")}
           {renderSelect("fabricType", optionSets.fabrics, "All Fabrics")}
-          {renderSelect("size", optionSets.sizes, "All Sizes")}
-          {renderSelect("color", optionSets.colors, "All Colors")}
           <select
             value={filters.trend}
             onChange={(event) => setFilter("trend", event.target.value)}
@@ -150,6 +494,8 @@ export function GarmentCatalogView({ products, title, subtitle }: GarmentCatalog
         </div>
       </div>
 
+      <div ref={pdfContainerRef} className="pointer-events-none absolute -left-[9999px] top-0 opacity-0" />
+
       {filteredProducts.length === 0 ? (
         <div className="rounded-[28px] border border-dashed border-slate-300 bg-white px-6 py-16 text-center shadow-sm">
           <Package2 className="mx-auto mb-3 h-12 w-12 text-slate-300" />
@@ -157,7 +503,10 @@ export function GarmentCatalogView({ products, title, subtitle }: GarmentCatalog
           <p className="mt-1 text-sm text-slate-500">Try widening the booking filters or searching with fewer keywords.</p>
         </div>
       ) : (
-        <div className="grid gap-5 xl:grid-cols-2">
+        <div
+          className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:[grid-template-columns:repeat(var(--garment-cards-per-row),minmax(0,1fr))]"
+          style={productGridStyle}
+        >
           {filteredProducts.map((product) => (
             <GarmentProductCard key={product.id} product={product} />
           ))}

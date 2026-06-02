@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { GarmentCartSettings, getGarmentCartSettings, saveGarmentCartSettings } from "@/features/garments/cartSettings";
 
-const cardsPerRowOptions: Array<GarmentCartSettings["cardsPerRow"]> = [1, 2, 3, 4];
+const cardsPerRowOptions: Array<GarmentCartSettings["cardsPerRow"]> = [1, 2, 3];
 
 const fieldLabels: Record<keyof GarmentCartSettings["visibleDetails"], string> = {
   image: "Image",

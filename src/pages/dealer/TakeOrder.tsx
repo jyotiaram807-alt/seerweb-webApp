@@ -1095,8 +1095,7 @@ const loadImageAsBase64 = async (url: string, retries = 3): Promise<string> => {
                                   <span className="px-2 text-xs font-medium text-gray-800 min-w-[20px] text-center">{v.quantity}</span>
                                   <button
                                     onClick={() => v.variantId === 0 ? updateQuantity(item.productId, v.quantity + 1) : updateVariantQty(item.productId, v.variantId, v.quantity + 1)}
-                                    disabled={v.quantity >= v.stock}
-                                    className="px-1.5 py-1 text-gray-500 hover:bg-gray-50 disabled:opacity-30"
+                                    className="px-1.5 py-1 text-gray-500 hover:bg-gray-50"
                                   ><Plus size={10} /></button>
                                 </div>
                                 <span className="text-xs font-semibold text-gray-800 w-16 text-right flex-shrink-0">₹{(v.price * v.quantity).toLocaleString("en-IN")}</span>
@@ -1225,7 +1224,7 @@ const TakeOrder = () => {
     return (
       <GarmentBookingPage
         dealerId={user?.id}
-        title="Dealer Garments Booking Desk"
+        title="Take Order"
         subtitle="Create wholesale bookings with live garment cards, set ordering, and size-wise piece entry."
       />
     );

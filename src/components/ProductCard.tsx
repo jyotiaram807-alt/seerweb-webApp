@@ -34,18 +34,17 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
   const cartProduct = cart.items.find((i) => i.productId === product.id);
   const cartVariant = cartProduct?.variants.find((v) => v.variantId === 0) ?? null;
-  const isOutOfStock = product.stock === 0;
   const productColor = resolveProductColor(product);
 
   const attrPills = Object.entries(product.attributes ?? {})
 .filter(([k, v]) => v && !["mrp", "size", "color", "Color", "colour", "Colour"].includes(k))
 .slice(0, 4);
 
-  const handleIncrement   = () => setQuantity((p) => Math.min(p + 1, product.stock));
+  const handleIncrement   = () => setQuantity((p) => p + 1);
   const handleDecrement   = () => setQuantity((p) => Math.max(p - 1, 0));
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = parseInt(e.target.value, 10);
-    setQuantity(!isNaN(v) ? Math.min(Math.max(v, 0), product.stock) : 0);
+    setQuantity(!isNaN(v) ? Math.max(v, 0) : 0);
   };
   const handleAddToCart = () => {
     if (quantity > 0) {
@@ -66,9 +65,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
   return (
     <>
-      <Card className={`bg-white border overflow-hidden transition-all duration-200 flex flex-col ${
-        isOutOfStock ? "opacity-60" : "hover:shadow-md hover:border-blue-200"
-      } ${cartVariant ? "border-blue-200 ring-1 ring-blue-100" : ""}`}>
+      <Card className={`bg-white border overflow-hidden transition-all duration-200 flex flex-col hover:shadow-md hover:border-blue-200 ${
+        cartVariant ? "border-blue-200 ring-1 ring-blue-100" : ""
+      }`}>
 
         {/* Image */}
         <div className="w-full h-36 border-b overflow-hidden flex-shrink-0 flex items-center justify-center">
@@ -171,19 +170,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
           {/* Stock + Controls */}
           <div className="flex items-center justify-between mt-auto gap-2">
-            {isOutOfStock ? (
-              <Badge variant="outline" className="text-red-500 border-red-200 text-xs">
-                Out of Stock
-              </Badge>
-            ) : (
-              <Badge variant="secondary" className={`text-xs font-medium ${
-                product.stock <= 5
-                  ? "bg-orange-50 text-orange-600 border border-orange-200"
-                  : "bg-gray-100 text-gray-500"
-              }`}>
-                {product.stock <= 5 ? `Only ${product.stock} left` : `Stock: ${product.stock}`}
-              </Badge>
-            )}
+            <Badge variant="secondary" className="text-xs font-medium bg-green-50 text-green-700 border border-green-200">
+              Ready to Order
+            </Badge>
 
             {cartVariant ? (
               <div className="flex items-center border border-blue-200 rounded-lg overflow-hidden bg-blue-50">
@@ -198,8 +187,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                 </span>
                 <button
                   onClick={() => handleCartQtyChange(1)}
-                  disabled={cartVariant.quantity >= product.stock}
-                  className="px-2.5 py-1.5 text-blue-600 hover:bg-blue-100 disabled:opacity-30 transition-colors"
+                  className="px-2.5 py-1.5 text-blue-600 hover:bg-blue-100 transition-colors"
                 >
                   <Plus size={12} />
                 </button>
@@ -217,19 +205,18 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                   <input
                     type="text" value={quantity} onChange={handleInputChange}
                     className="w-8 text-center text-xs font-medium text-gray-800 bg-white focus:outline-none"
-                    min="0" max={product.stock}
+                    min="0"
                   />
                   <button
                     onClick={handleIncrement}
-                    disabled={quantity >= product.stock}
-                    className="px-2 py-1.5 text-gray-500 hover:bg-gray-50 disabled:opacity-30 transition-colors"
+                    className="px-2 py-1.5 text-gray-500 hover:bg-gray-50 transition-colors"
                   >
                     <Plus size={11} />
                   </button>
                 </div>
                 <Button
                   onClick={handleAddToCart}
-                  disabled={quantity === 0 || isOutOfStock}
+                  disabled={quantity === 0}
                   size="sm"
                   className="bg-blue-600 hover:bg-blue-700 text-white gap-1 h-8 px-3 text-xs"
                 >

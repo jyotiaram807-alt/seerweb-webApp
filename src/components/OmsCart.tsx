@@ -97,10 +97,6 @@ const OmsCart: React.FC<OmsCartProps> = ({
       toast.error("Enter a valid quantity");
       return;
     }
-    if (qty > variant.qty) {
-      toast.error(`Only ${variant.qty} in stock`);
-      return;
-    }
     addVariantToCart(p, variant, qty);
     setQtyState((prev) => ({
       ...prev,
@@ -189,7 +185,6 @@ const OmsCart: React.FC<OmsCartProps> = ({
             <div className="space-y-1 flex-1">
               {(product.variants ?? []).map((variant) => {
                 const cv = getCartVariant(product.id, variant.id);
-                const outOfStock = variant.qty === 0;
                 const curQty = qtyState[product.id]?.[variant.id] ?? String(variant.qty);
 
                 return (
@@ -198,9 +193,7 @@ const OmsCart: React.FC<OmsCartProps> = ({
                     className={`grid ${gridCols} gap-2 items-center px-1.5 py-1 rounded-lg ${
                       cv
                         ? "bg-blue-50 border border-blue-200"
-                        : outOfStock
-                        ? "bg-gray-50 opacity-50"
-                        : "bg-gray-50 border border-transparent"
+                      : "bg-gray-50 border border-transparent"
                     }`}
                   >
                     {/* Size badge */}
@@ -233,8 +226,7 @@ const OmsCart: React.FC<OmsCartProps> = ({
                         <span className="text-xs font-bold text-blue-700 min-w-[16px] text-center">{cv.quantity}</span>
                         <button
                           onClick={() => updateVariantQty(product.id, variant.id, cv.quantity + 1)}
-                          disabled={cv.quantity >= variant.qty}
-                          className="px-1 py-0.5 text-blue-600 hover:bg-blue-50 disabled:opacity-30"
+                          className="px-1 py-0.5 text-blue-600 hover:bg-blue-50"
                         >
                           <Plus size={9} />
                         </button>
@@ -243,16 +235,14 @@ const OmsCart: React.FC<OmsCartProps> = ({
                       <input
                         type="number"
                         min="1"
-                        max={variant.qty}
                         value={curQty}
-                        disabled={outOfStock}
                         onChange={(e) =>
                           setQtyState((prev) => ({
                             ...prev,
                             [product.id]: { ...prev[product.id], [variant.id]: e.target.value },
                           }))
                         }
-                        className="w-full text-center text-xs font-medium text-gray-800 border border-gray-200 rounded bg-white focus:outline-none focus:ring-1 focus:ring-blue-400 py-0.5 disabled:opacity-40"
+                        className="w-full text-center text-xs font-medium text-gray-800 border border-gray-200 rounded bg-white focus:outline-none focus:ring-1 focus:ring-blue-400 py-0.5"
                       />
                     )}
 
@@ -267,10 +257,9 @@ const OmsCart: React.FC<OmsCartProps> = ({
                     ) : (
                       <button
                         onClick={() => handleAddVariant(product, variant)}
-                        disabled={outOfStock}
-                        className="w-full text-[9px] px-1 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded font-semibold disabled:opacity-30 transition-colors text-center whitespace-nowrap"
+                        className="w-full text-[9px] px-1 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded font-semibold transition-colors text-center whitespace-nowrap"
                       >
-                        {outOfStock ? "Out" : "Add"}
+                        Add
                       </button>
                     )}
                   </div>
@@ -285,22 +274,12 @@ const OmsCart: React.FC<OmsCartProps> = ({
         ) : (
           /* Simple product */
           <div className="mt-auto pt-3 border-t border-gray-100 flex items-center justify-between gap-2">
-            {product.stock === 0 ? (
-              <Badge variant="outline" className="text-red-500 border-red-200 text-xs">
-                Out of Stock
-              </Badge>
-            ) : (
-              <Badge
-                variant="secondary"
-                className={`text-xs font-medium ${
-                  product.stock <= 5
-                    ? "bg-orange-50 text-orange-600 border border-orange-200"
-                    : "bg-green-50 text-green-700 border border-green-200"
-                }`}
-              >
-                {product.stock <= 5 ? `Only ${product.stock} left` : `Stock: ${product.stock}`}
-              </Badge>
-            )}
+            <Badge
+              variant="secondary"
+              className="text-xs font-medium bg-green-50 text-green-700 border border-green-200"
+            >
+              Ready to Order
+            </Badge>
             {(() => {
               const cv = getCartSimple(product.id);
               return cv ? (
@@ -314,8 +293,7 @@ const OmsCart: React.FC<OmsCartProps> = ({
                   <span className="px-2 text-sm font-bold text-blue-700 min-w-[24px] text-center">{cv.quantity}</span>
                   <button
                     onClick={() => updateQuantity(product.id, cv.quantity + 1)}
-                    disabled={cv.quantity >= product.stock}
-                    className="px-2 py-1.5 text-blue-600 hover:bg-blue-100 disabled:opacity-30"
+                    className="px-2 py-1.5 text-blue-600 hover:bg-blue-100"
                   >
                     <Plus size={11} />
                   </button>
@@ -331,7 +309,6 @@ const OmsCart: React.FC<OmsCartProps> = ({
                     addToCart(product, 1);
                     onAddSuccess?.();
                   }}
-                  disabled={product.stock === 0}
                   className="bg-blue-600 hover:bg-blue-700 text-white h-8 px-3 text-xs gap-1"
                 >
                   <Plus size={11} /> Add

@@ -410,8 +410,7 @@ const Cart = () => {
                                             ? updateQuantity(item.productId, v.quantity + 1)
                                             : updateVariantQty(item.productId, v.variantId, v.quantity + 1)
                                         }
-                                        disabled={v.quantity >= v.stock}
-                                        className="px-2 py-1.5 text-gray-500 hover:bg-gray-50 disabled:opacity-30 transition-colors"
+                                        className="px-2 py-1.5 text-gray-500 hover:bg-gray-50 transition-colors"
                                       >
                                         <Plus size={11} />
                                       </button>

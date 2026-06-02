@@ -93,7 +93,7 @@ export function GarmentProductCard({ product }: GarmentProductCardProps) {
             <img
               src={gallery[0] || getImageUrl(product.image)}
               alt={product.name}
-              className="h-64 w-full object-cover"
+              className="h-64 w-full object-contain"
             />
           </div>
           <div className="grid grid-cols-4 gap-2 md:grid-cols-1">
@@ -221,9 +221,6 @@ export function GarmentProductCard({ product }: GarmentProductCardProps) {
             <Plus size={15} className="mr-2" />
             Add To Cart
           </Button>
-          <Button type="button" variant="outline" className={liked ? "border-red-300 text-red-500" : ""} onClick={() => setLiked((current) => !current)}>
-            <Heart size={16} fill={liked ? "currentColor" : "none"} />
-          </Button>
           <Button
             type="button"
             variant="outline"
@@ -239,3 +236,4 @@ export function GarmentProductCard({ product }: GarmentProductCardProps) {
     </article>
   );
 }
+

@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import logo from "../assets/images/react-logo.png";
 import {
   Card,
   CardContent,
+  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
@@ -12,7 +14,7 @@ import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 
 // Import icons
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, LockKeyhole, ShieldCheck } from "lucide-react";
 
 const LoginForm = () => {
   const [username, setUsername] = useState("");
@@ -46,17 +48,44 @@ const LoginForm = () => {
   };
 
   return (
-    <Card className="md:w-[400px]">
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-xl sm:text-2xl font-bold text-center">
-          Login to Seerweb OMS
-        </CardTitle>
+    <Card className="overflow-hidden border-white/10 bg-white text-slate-900 shadow-2xl shadow-black/25">
+      <div className="h-1.5 bg-gradient-to-r from-royal via-blue-500 to-cyan-400" />
+      <CardHeader className="space-y-4 p-6 pb-5 sm:p-8 sm:pb-6">
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-sm font-bold tracking-[0.24em] text-white">
+            <img src={logo} alt="Seerweb Logo" />
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-royal">
+              Seerweb OMS
+            </p>
+            <p className="text-sm text-slate-500">Enterprise business application access</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 rounded-2xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+          <ShieldCheck className="h-4 w-4 shrink-0" />
+          <span>Secure login for authorized users</span>
+        </div>
       </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Username Field */}
+
+      <CardContent className="p-6 pt-0 sm:px-8">
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="grid gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+            <div className="flex items-start gap-3">
+              <LockKeyhole className="mt-0.5 h-4 w-4 shrink-0 text-royal" />
+              <p>
+                Use your assigned OMS username and password to continue to the
+                dashboard.
+              </p>
+            </div>
+          </div>
+
           <div className="space-y-2">
-            <label htmlFor="username" className="text-sm font-medium flex">
+            <label
+              htmlFor="username"
+              className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-700"
+            >
               Username
             </label>
             <Input
@@ -65,13 +94,15 @@ const LoginForm = () => {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               disabled={isLoading}
-              className="input-royal"
+              className="h-12 rounded-xl border-slate-200 bg-white px-4 text-slate-900 shadow-sm focus-visible:ring-royal"
             />
           </div>
 
-          {/* Password Field with Toggle */}
           <div className="space-y-2">
-            <label htmlFor="password" className="text-sm font-medium flex">
+            <label
+              htmlFor="password"
+              className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-700"
+            >
               Password
             </label>
             <div className="relative">
@@ -82,13 +113,14 @@ const LoginForm = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isLoading}
-                className="input-royal pr-10" // padding right for icon
+                className="h-12 rounded-xl border-slate-200 bg-white px-4 pr-11 text-slate-900 shadow-sm focus-visible:ring-royal"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((prev) => !prev)}
-                className="absolute inset-y-0 right-2 flex items-center text-gray-500 hover:text-gray-700"
+                className="absolute inset-y-0 right-3 flex items-center text-slate-400 transition-colors hover:text-slate-700"
                 tabIndex={-1}
+                aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
@@ -98,13 +130,20 @@ const LoginForm = () => {
           <Button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-royal hover:bg-royal-dark"
+            className="h-12 w-full rounded-xl bg-slate-950 text-white shadow-lg shadow-slate-900/20 transition hover:bg-slate-800"
           >
-            {isLoading ? "Logging in..." : "Login"}
+            {isLoading ? "Signing in..." : "Login to Seerweb OMS"}
           </Button>
         </form>
       </CardContent>
-      <CardFooter className="flex justify-center text-xs text-gray-500"></CardFooter>
+
+      <CardFooter className="flex flex-col items-start gap-2 border-t border-slate-100 bg-slate-50/70 p-6 text-xs text-slate-500 sm:px-8">
+        <p className="font-medium text-slate-700">Enterprise Software Expertise</p>
+        <p>
+          TallyPrime, ERP implementation, customization, integration, and business
+          software support.
+        </p>
+      </CardFooter>
     </Card>
   );
 };
