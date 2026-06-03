@@ -27,26 +27,6 @@ const Index = () => {
     "Enterprise Software Services",
   ];
 
-  const strengths = [
-    {
-      icon: ShieldCheck,
-      title: "Trusted Tally Expertise",
-      description:
-        "Business-ready solutions for accounting, compliance, reporting, and operational visibility.",
-    },
-    {
-      icon: Layers3,
-      title: "Implementation to Customization",
-      description:
-        "From setup and rollout to tailored workflows, reports, and system integrations.",
-    },
-    {
-      icon: Headphones,
-      title: "Ongoing Enterprise Support",
-      description:
-        "Responsive guidance for upgrades, optimization, remote assistance, and user enablement.",
-    },
-  ];
 
   // Redirect if already logged in
   useEffect(() => {
@@ -74,7 +54,7 @@ const Index = () => {
 
             <div className="relative flex flex-col gap-8">
               <div className="flex flex-wrap items-center gap-4">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white text-xl font-bold tracking-[0.24em] text-white shadow-lg shadow-royal/30">
+                <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white text-xl font-bold tracking-[0.24em] text-white shadow-lg shadow-royal/30">
                   <img src={logo} alt="Seerweb Logo" />
                 </div>
                 <div>
@@ -91,47 +71,6 @@ const Index = () => {
                 </div>
               </div>
 
-              <div className="grid gap-4 rounded-3xl border border-white/10 bg-slate-900/50 p-5 sm:grid-cols-[1.15fr_0.85fr] sm:p-6">
-                <div>
-                  <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-xs font-medium text-emerald-200">
-                    <BadgeCheck className="h-4 w-4" />
-                    Business-ready enterprise software partner
-                  </div>
-                  <h2 className="mt-4 text-2xl font-semibold text-white sm:text-3xl">
-                    Professional ERP delivery backed by TallyPrime expertise
-                  </h2>
-                  <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
-                    Seerweb supports businesses with TallyPrime, ERP solutions,
-                    implementation, customization, integration, training, and software
-                    services that improve financial control and operational efficiency.
-                  </p>
-                </div>
-
-                <div className="grid gap-3">
-                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                    <p className="text-xs uppercase tracking-[0.24em] text-slate-400">
-                      About Company
-                    </p>
-                    <p className="mt-2 text-sm leading-6 text-slate-200">
-                      Focused on enterprise solutions for growing businesses across
-                      manufacturing, retail, pharma, FMCG, and service operations.
-                    </p>
-                  </div>
-                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                    <p className="text-xs uppercase tracking-[0.24em] text-slate-400">
-                      Business Solutions
-                    </p>
-                    <p className="mt-2 text-sm leading-6 text-slate-200">
-                      TallyPrime licensing, ERP rollout, custom workflows, data
-                      synchronization, training, and support services for enterprise teams.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              
-
-              
             </div>
           </section>
 

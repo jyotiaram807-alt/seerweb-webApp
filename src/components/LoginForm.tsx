@@ -51,17 +51,6 @@ const LoginForm = () => {
     <Card className="overflow-hidden border-white/10 bg-white text-slate-900 shadow-2xl shadow-black/25">
       <div className="h-1.5 bg-gradient-to-r from-royal via-blue-500 to-cyan-400" />
       <CardHeader className="space-y-4 p-6 pb-5 sm:p-8 sm:pb-6">
-        <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-sm font-bold tracking-[0.24em] text-white">
-            <img src={logo} alt="Seerweb Logo" />
-          </div>
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-royal">
-              Seerweb OMS
-            </p>
-            <p className="text-sm text-slate-500">Enterprise business application access</p>
-          </div>
-        </div>
 
         <div className="flex items-center gap-2 rounded-2xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
           <ShieldCheck className="h-4 w-4 shrink-0" />
@@ -71,15 +60,7 @@ const LoginForm = () => {
 
       <CardContent className="p-6 pt-0 sm:px-8">
         <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="grid gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
-            <div className="flex items-start gap-3">
-              <LockKeyhole className="mt-0.5 h-4 w-4 shrink-0 text-royal" />
-              <p>
-                Use your assigned OMS username and password to continue to the
-                dashboard.
-              </p>
-            </div>
-          </div>
+          
 
           <div className="space-y-2">
             <label

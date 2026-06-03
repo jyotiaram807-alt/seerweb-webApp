@@ -56,10 +56,11 @@ const OmsCart: React.FC<OmsCartProps> = ({
     updateVariantQty,
   } = useCart();
 
+  // ── Default qty is always 1 (not stock quantity) ──
   const [qtyState, setQtyState] = useState<QtyState>(() => {
     const initQty: QtyState = { [product.id]: {} };
     (product.variants ?? []).forEach((v) => {
-      initQty[product.id][v.id] = String(v.qty);
+      initQty[product.id][v.id] = "1";
     });
     return initQty;
   });
@@ -92,15 +93,17 @@ const OmsCart: React.FC<OmsCartProps> = ({
       onAddBlocked?.();
       return;
     }
-    const qty = parseInt(qtyState[p.id]?.[variant.id] ?? String(variant.qty), 10);
+    const qty = parseInt(qtyState[p.id]?.[variant.id] ?? "1", 10);
     if (isNaN(qty) || qty <= 0) {
       toast.error("Enter a valid quantity");
       return;
     }
+    // ── No stock restriction: allow adding regardless of variant.qty ──
     addVariantToCart(p, variant, qty);
+    // Reset back to 1 after adding
     setQtyState((prev) => ({
       ...prev,
-      [p.id]: { ...prev[p.id], [variant.id]: String(variant.qty) },
+      [p.id]: { ...prev[p.id], [variant.id]: "1" },
     }));
     onAddSuccess?.();
   };
@@ -185,7 +188,7 @@ const OmsCart: React.FC<OmsCartProps> = ({
             <div className="space-y-1 flex-1">
               {(product.variants ?? []).map((variant) => {
                 const cv = getCartVariant(product.id, variant.id);
-                const curQty = qtyState[product.id]?.[variant.id] ?? String(variant.qty);
+                const curQty = qtyState[product.id]?.[variant.id] ?? "1";
 
                 return (
                   <div
@@ -267,7 +270,6 @@ const OmsCart: React.FC<OmsCartProps> = ({
               })}
             </div>
             <p className="text-[9px] text-gray-400 mt-1.5 text-right">
-              {(product.variants ?? []).reduce((s, v) => s + v.qty, 0)} units ·{" "}
               {(product.variants ?? []).length} sizes
             </p>
           </div>

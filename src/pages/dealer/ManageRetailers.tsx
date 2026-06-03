@@ -72,6 +72,7 @@ const ManageRetailers = () => {
   const [retailers, setRetailers] = useState<Retailer[]>([]);
   const [filteredRetailers, setFilteredRetailers] = useState<Retailer[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isOrderHistoryDialogOpen, setIsOrderHistoryDialogOpen] = useState(false);
@@ -222,7 +223,7 @@ const ManageRetailers = () => {
       confirmPassword: "",
       dealer_id: user?.id || "",
       role: "",
-      assigned: retailer.assigned,
+      assigned: retailer.assigned || "",
     });
     setIsDialogOpen(true);
   };
@@ -317,79 +318,90 @@ const ManageRetailers = () => {
     return true;
   };
 
-  const handleFormSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const isValid = await validateForm(); // ← was: if (!validateForm()) return;
-    if (!isValid) return;
+const handleFormSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        toast.error("Unauthorized: Token not found");
-        return;
-      }
+  if (isSaving) return;
 
-      const headers = {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      };
+  setIsSaving(true);
 
-      let res;
+  const isValid = await validateForm();
 
-      if (isEditing && currentRetailer) {
-        res = await fetch(`${apiUrl}/retailers/${currentRetailer.id}`, {
-          method: "PUT",
-          headers,
-          body: JSON.stringify(formData),
-        });
-      } else {
-        formData.dealer_id = user?.id || "";
-        formData.role = "retailer";
+  if (!isValid) {
+    setIsSaving(false);
+    return;
+  }
 
-        res = await fetch(`${apiUrl}/retailers`, {
-          method: "POST",
-          headers,
-          body: JSON.stringify(formData),
-        });
-      }
+  try {
+    const token = localStorage.getItem("token");
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        console.error("API ERROR:", data);
-
-        // 🔥 Extract proper message
-        let message = "Something went wrong";
-
-        if (data?.messages?.error) {
-          message = data.messages.error;
-        } else if (data?.message) {
-          message = data.message;
-        }
-
-        if (message.includes("Duplicate entry") && message.includes("store_name")) {
-          message = "Store name already exists. Please use a different name.";
-        }
-
-        throw new Error(message);
-      }
-
-      toast.success(isEditing ? "Retailer updated successfully" : "Retailer added successfully");
-
-      const listResponse = await fetch(`${apiUrl}/retailers?dealerid=${user?.id}`, { headers });
-      const updatedList = await listResponse.json();
-
-      setRetailers(updatedList);
-      setFilteredRetailers(updatedList);
-      setIsDialogOpen(false);
-
-    } catch (error: any) {
-      console.error("FULL ERROR:", error);
-
-      // 🔥 Show exact DB error to user
-      toast.error(error.message);
+    if (!token) {
+      toast.error("Unauthorized: Token not found");
+      setIsSaving(false);
+      return;
     }
-  };
+
+    const headers = {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    };
+
+    let res;
+
+    if (isEditing && currentRetailer) {
+      res = await fetch(`${apiUrl}/retailers/${currentRetailer.id}`, {
+        method: "PUT",
+        headers,
+        body: JSON.stringify(formData),
+      });
+    } else {
+      formData.dealer_id = user?.id || "";
+      formData.role = "retailer";
+
+      res = await fetch(`${apiUrl}/retailers`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(formData),
+      });
+    }
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      let message = "Something went wrong";
+
+      if (data?.messages?.error) {
+        message = data.messages.error;
+      } else if (data?.message) {
+        message = data.message;
+      }
+
+      throw new Error(message);
+    }
+
+    toast.success(
+      isEditing
+        ? "Customer updated successfully"
+        : "Customer added successfully"
+    );
+
+    const listResponse = await fetch(
+      `${apiUrl}/retailers?dealerid=${user?.id}`,
+      { headers }
+    );
+
+    const updatedList = await listResponse.json();
+
+    setRetailers(updatedList);
+    setFilteredRetailers(updatedList);
+    setIsDialogOpen(false);
+
+  } catch (error: any) {
+    toast.error(error.message);
+  } finally {
+    setIsSaving(false);
+  }
+};
 
   const handleExport = (type: "xlsx" | "csv") => {
     const data = retailers.map((c) => {
@@ -774,20 +786,34 @@ const ManageRetailers = () => {
                         <UserCheck className="h-3.5 w-3.5 text-gray-400" /> Assign Sales Executive
                       </Label>
                       <Select
-                        value={formData.assigned}
-                        onValueChange={(value) => setFormData((prev) => ({ ...prev, assigned: value }))}
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Select Sales Executive" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {filteredStaff.map((executive) => (
-                            <SelectItem key={executive.id} value={String(executive.id)}>
-                              {executive.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+  value={formData.assigned || "unassigned"}
+  onValueChange={(value) =>
+    setFormData((prev) => ({
+      ...prev,
+      assigned: value === "unassigned" ? "" : value,
+    }))
+  }
+>
+  <SelectTrigger className="w-full">
+    <SelectValue placeholder="Select Sales Executive" />
+  </SelectTrigger>
+
+  <SelectContent>
+    {/* Unassign option */}
+    <SelectItem value="unassigned">
+      Unassigned
+    </SelectItem>
+
+    {filteredStaff.map((executive) => (
+      <SelectItem
+        key={executive.id}
+        value={String(executive.id)}
+      >
+        {executive.name}
+      </SelectItem>
+    ))}
+  </SelectContent>
+</Select>
                     </div>
 
                   </div>
@@ -796,8 +822,19 @@ const ManageRetailers = () => {
                     <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                       Cancel
                     </Button>
-                    <Button type="submit" className="bg-royal hover:bg-royal-dark text-white">
-                      {isEditing ? "Update Customer" : "Add Customer"}
+                    <Button
+                      type="submit"
+                      disabled={isSaving}
+                      className="bg-royal hover:bg-royal-dark text-white min-w-[180px]"
+                    >
+                      {isSaving ? (
+                        <div className="flex items-center gap-2">
+                          <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          {isEditing ? "Updating..." : "Saving..."}
+                        </div>
+                      ) : (
+                        isEditing ? "Update Customer" : "Add Customer"
+                      )}
                     </Button>
                   </DialogFooter>
                 </form>
